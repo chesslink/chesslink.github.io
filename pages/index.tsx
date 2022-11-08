@@ -3,6 +3,7 @@ import Image from "next/image";
 import styles from "../styles/Home.module.css";
 import { useMemo, useState } from "react";
 import { twCascade } from "@mariusmarais/tailwind-cascade";
+import { useRouter } from "next/router";
 
 const PAWN = 1;
 const KNIGHT = 2;
@@ -15,11 +16,30 @@ const WHITE = 0;
 
 const FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
+const BASE64 =
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+
 export default function Home() {
-  const [history, setHistory] = useState<number[][]>([]);
+  const router = useRouter();
+  const { w: whitePlayer, b: blackPlayer, h: inputHistory } = router.query;
+
+  const history = useMemo(() => {
+    const dest = [];
+    const src = inputHistory || [];
+    for (let i = 0; i < src.length; i += 2) {
+      const from = BASE64.indexOf(src[i + 0]);
+      const to = BASE64.indexOf(src[i + 1]);
+      dest.push([from, to]);
+    }
+    return dest;
+  }, [inputHistory]);
+
+  // const [history, setHistory] = useState<number[][]>([]);
   const [cursorPos, setCursorPos] = useState<number[] | null>(null);
 
   const initialBoard = useMemo(() => parseFen(FEN).board, [FEN]);
+
+  const [move, setMove] = useState<number[] | null>(null);
 
   const board = useMemo(() => {
     const board = [...initialBoard];
@@ -29,13 +49,20 @@ export default function Home() {
       board[from] = 0;
     }
 
+    if (Array.isArray(move)) {
+      const [from, to] = move;
+      board[to] = board[from];
+      board[from] = 0;
+    }
+
     return board;
-  }, [FEN, history]);
+  }, [FEN, history, move]);
 
   const blacksMove = history.length % 2 != 0;
 
   return (
     <div className="w-full h-full flex flex-col items-center justify-center">
+      <div>Black: {blackPlayer}</div>
       <div>{blacksMove ? "Black" : "White"} to move</div>
       <div className="relative text-6xl">
         <div className="flex flex-col">
@@ -56,20 +83,26 @@ export default function Home() {
                           cursorPos[1] === col,
                       })}
                       onClick={(ev) => {
-                        if (Array.isArray(cursorPos)) {
-                          if (cursorPos[0] === row && cursorPos[1] === col) {
+                        if (move === null) {
+                          if (Array.isArray(cursorPos)) {
+                            if (cursorPos[0] === row && cursorPos[1] === col) {
+                            } else {
+                              // const newHistory = [...history];
+                              // newHistory.push([
+                              //   cursorPos[0] * 8 + cursorPos[1],
+                              //   row * 8 + col,
+                              // ]);
+                              setMove([
+                                cursorPos[0] * 8 + cursorPos[1],
+                                row * 8 + col,
+                              ]);
+                              // setHistory(newHistory);
+                            }
+                            setCursorPos(null);
                           } else {
-                            const newHistory = [...history];
-                            newHistory.push([
-                              cursorPos[0] * 8 + cursorPos[1],
-                              row * 8 + col,
-                            ]);
-                            setHistory(newHistory);
-                          }
-                          setCursorPos(null);
-                        } else {
-                          if (board[row * 8 + col]) {
-                            setCursorPos([row, col]);
+                            if (board[row * 8 + col]) {
+                              setCursorPos([row, col]);
+                            }
                           }
                         }
                       }}
@@ -90,14 +123,80 @@ export default function Home() {
               <Piece piece={piece} />
             </div>
           ))}
+
+        <svg
+          className="absolute inset-0 pointer-events-none"
+          viewBox="0 0 16 16"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <defs>
+            <marker
+              id="arrow"
+              viewBox="0 0 1 1"
+              refX="1"
+              refY="0.5"
+              markerWidth="6"
+              markerHeight="6"
+              orient="auto-start-reverse"
+            >
+              <path d="M 0 0 L 1 0.5 L 0 1 z" />
+            </marker>
+            <marker
+              id="dot"
+              viewBox="0 0 10 10"
+              refX="5"
+              refY="5"
+              markerWidth="5"
+              markerHeight="5"
+            >
+              <circle cx="5" cy="5" r="5" fill="red" />
+            </marker>
+          </defs>
+          {Array.isArray(move) && (
+            <polyline
+              points={`${1 + 2 * (move[0] % 8)},${
+                1 + 2 * Math.floor(move[0] / 8)
+              } ${1 + 2 * (move[1] % 8)},${1 + 2 * Math.floor(move[1] / 8)}`}
+              fill="none"
+              strokeWidth="0.1"
+              stroke="black"
+              marker-end="url(#arrow)"
+            />
+          )}
+        </svg>
       </div>
-      <div className="flex flex-wrap gap-2">
-        {history.map(([from, to], i) => (
-          <div key={i}>
-            {from},{to}
-          </div>
-        ))}
-      </div>
+      <div>White: {whitePlayer}</div>
+
+      <button
+        style={{ all: "revert" }}
+        disabled={move === null}
+        onClick={() => void setMove(null)}
+      >
+        Undo
+      </button>
+
+      <form
+        action="."
+        onSubmit={(ev) => {
+          ev.preventDefault();
+
+          const encodedHistory = history
+            .concat([move || []])
+            .flat()
+            .map((x) => BASE64[x])
+            .join("");
+
+          router.replace(`./?h=${encodedHistory}`);
+          setMove(null);
+        }}
+      >
+        <input
+          type="submit"
+          value="Send move"
+          style={{ all: "revert" }}
+          disabled={move === null}
+        />
+      </form>
     </div>
   );
 }
