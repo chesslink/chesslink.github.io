@@ -4,6 +4,7 @@ import styles from "../styles/Home.module.css";
 import { useMemo, useState } from "react";
 import { twCascade } from "@mariusmarais/tailwind-cascade";
 import { useRouter } from "next/router";
+import Link from "next/link";
 
 const PAWN = 1;
 const KNIGHT = 2;
@@ -59,6 +60,43 @@ export default function Home() {
   }, [FEN, history, move]);
 
   const blacksMove = history.length % 2 != 0;
+
+  const newEncodedHistory = useMemo(
+    () =>
+      history
+        .concat([move || []])
+        .flat()
+        .map((x) => BASE64[x])
+        .join(""),
+    [history, move]
+  );
+
+  const newStateLink = useMemo(
+    () => `?w=${whitePlayer}&b=${blackPlayer}&h=${newEncodedHistory}`,
+    [newEncodedHistory, blackPlayer, whitePlayer]
+  );
+
+  const { x0, y0, dx, dy } = useMemo(() => {
+    if (Array.isArray(move)) {
+      const x0 = 1 + 2 * (move[0] % 8);
+      const y0 = 1 + 2 * Math.floor(move[0] / 8);
+
+      const x1 = 1 + 2 * (move[1] % 8);
+      const y1 = 1 + 2 * Math.floor(move[1] / 8);
+
+      const dx = x1 - x0;
+      const dy = y1 - y0;
+
+      const norm = Math.sqrt(dx * dx + dy * dy);
+
+      const ndx = dx / norm;
+      const ndy = dy / norm;
+
+      return { x0, y0, dx: ndx * (norm - 0.71), dy: ndy * (norm - 0.71) };
+    } else {
+      return {};
+    }
+  }, [move]);
 
   return (
     <div className="w-full h-full flex flex-col items-center justify-center">
@@ -133,7 +171,7 @@ export default function Home() {
             <marker
               id="arrow"
               viewBox="0 0 1 1"
-              refX="1"
+              refX="0.5"
               refY="0.5"
               markerWidth="6"
               markerHeight="6"
@@ -153,15 +191,16 @@ export default function Home() {
             </marker>
           </defs>
           {Array.isArray(move) && (
-            <polyline
-              points={`${1 + 2 * (move[0] % 8)},${
-                1 + 2 * Math.floor(move[0] / 8)
-              } ${1 + 2 * (move[1] % 8)},${1 + 2 * Math.floor(move[1] / 8)}`}
-              fill="none"
-              strokeWidth="0.1"
-              stroke="black"
-              marker-end="url(#arrow)"
-            />
+            <>
+              <polyline
+                points={`${x0},${y0} ${x0 + dx},${y0 + dy}`}
+                fill="none"
+                strokeWidth="0.1"
+                stroke="black"
+                marker-end="url(#arrow)"
+                strokeLinecap="round"
+              />
+            </>
           )}
         </svg>
       </div>
@@ -186,7 +225,7 @@ export default function Home() {
             .map((x) => BASE64[x])
             .join("");
 
-          router.replace(`./?h=${encodedHistory}`);
+          router.push(`./?h=${encodedHistory}`);
           setMove(null);
         }}
       >
@@ -197,6 +236,17 @@ export default function Home() {
           disabled={move === null}
         />
       </form>
+
+      {Array.isArray(move) && <Link href={newStateLink} target="_blank">{newStateLink}</Link>}
+      {Array.isArray(move) && (
+        <a
+          href={`mailto:${blackPlayer}?&subject=${encodeURIComponent(
+            "[chessbyemail.com] Your move"
+          )}&body=${encodeURI("http://localhost:3000/" + newStateLink)}`}
+        >
+          Send move to opponent
+        </a>
+      )}
     </div>
   );
 }
