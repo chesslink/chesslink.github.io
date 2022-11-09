@@ -22,14 +22,20 @@ const BASE64 =
 
 export default function Home() {
   const router = useRouter();
-  const { w: whitePlayer, b: blackPlayer, h: inputHistory } = router.query;
+  const { state: inputHistory } = router.query;
 
   const history = useMemo(() => {
     const dest = [];
     const src = inputHistory || [];
     for (let i = 0; i < src.length; i += 2) {
-      const from = BASE64.indexOf(src[i + 0]);
-      const to = BASE64.indexOf(src[i + 1]);
+      let from = BASE64.indexOf(src[i + 0]);
+      let to = BASE64.indexOf(src[i + 1]);
+
+      if ((i & 2) === 2) {
+        from ^= 63;
+        to ^= 63;
+      }
+
       dest.push([from, to]);
     }
     return dest;
@@ -72,8 +78,8 @@ export default function Home() {
   );
 
   const newStateLink = useMemo(
-    () => `?w=${whitePlayer}&b=${blackPlayer}&h=${newEncodedHistory}`,
-    [newEncodedHistory, blackPlayer, whitePlayer]
+    () => `http://localhost:3000/?state=${newEncodedHistory}`,
+    [newEncodedHistory]
   );
 
   const { x0, y0, dx, dy } = useMemo(() => {
@@ -98,11 +104,11 @@ export default function Home() {
     }
   }, [move]);
 
+  const [showLink, setShowLink] = useState(false);
+
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center">
-      <div>Black: {blackPlayer}</div>
-      <div>{blacksMove ? "Black" : "White"} to move</div>
-      <div className="relative text-6xl">
+    <div className="w-full h-full flex flex-col items-center justify-center gap-4">
+      <div className="relative border-slate-300 border-8 border-double">
         <div className="flex flex-col">
           {Array(8)
             .fill(0)
@@ -114,7 +120,8 @@ export default function Home() {
                     <button
                       key={col}
                       className={twCascade("w-16 h-16 relative", {
-                        "bg-slate-300": (row ^ col) & 1,
+                        "bg-slate-300":
+                          ((row ^ col) & 1) ^ (blacksMove ? 1 : 0),
                         "border-solid border-2 border-black":
                           Array.isArray(cursorPos) &&
                           cursorPos[0] === row &&
@@ -150,7 +157,11 @@ export default function Home() {
             ))}
         </div>
         {board
-          .map((piece, i) => ({ piece, row: Math.floor(i / 8), col: i % 8 }))
+          .map((piece, i) => ({
+            piece,
+            row: Math.floor(i / 8) ^ (blacksMove ? 7 : 0),
+            col: i % 8 ^ (blacksMove ? 7 : 0),
+          }))
           .filter(({ piece }) => piece !== 0)
           .map(({ piece, row, col }, i) => (
             <div
@@ -203,18 +214,30 @@ export default function Home() {
             </>
           )}
         </svg>
+
+        {showLink && <></>}
       </div>
-      <div>White: {whitePlayer}</div>
 
-      <button
-        style={{ all: "revert" }}
-        disabled={move === null}
-        onClick={() => void setMove(null)}
-      >
-        Undo
-      </button>
+      <div className="flex flex-row gap-4">
+        <p>Your move</p>
 
-      <form
+        <div className="outline-1 outline outline-black w-24 text-center">
+          {Array.isArray(move)
+            ? `${PIECES.get(board[move[1]])} ${posString(
+                move[0]
+              )} to ${posString(move[1])}`
+            : " "}
+        </div>
+
+        <button
+          style={{ all: "revert" }}
+          disabled={move === null}
+          onClick={() => void setMove(null)}
+        >
+          Undo
+        </button>
+      </div>
+      {/* <form
         action="."
         onSubmit={(ev) => {
           ev.preventDefault();
@@ -235,25 +258,44 @@ export default function Home() {
           style={{ all: "revert" }}
           disabled={move === null}
         />
-      </form>
+      </form> */}
 
-      {Array.isArray(move) && <Link href={newStateLink} target="_blank">{newStateLink}</Link>}
-      {Array.isArray(move) && (
-        <a
-          href={`mailto:${blackPlayer}?&subject=${encodeURIComponent(
-            "[chessbyemail.com] Your move"
-          )}&body=${encodeURI("http://localhost:3000/" + newStateLink)}`}
-        >
-          Send move to opponent
-        </a>
-      )}
+      <div
+        className={twCascade(
+          "flex flex-col gap-2 items-center bg-slate-200 rounded-lg py-4 px-8",
+          {
+            "opacity-0": move === null,
+          }
+        )}
+      >
+        <p>
+          Send the following link to your opponent and wait for a new link in
+          response
+        </p>
+        <div className="flex flex-row gap-1">
+          <input
+            style={{ all: "revert" }}
+            type="text"
+            value={newStateLink}
+            readOnly
+          />
+          <button
+            style={{ all: "revert" }}
+            onClick={() => {
+              window.navigator.clipboard.writeText(newStateLink);
+            }}
+          >
+            Copy to clipboard
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
 
 function Piece({ piece }: { piece: number }) {
   return (
-    <div className="relative h-16 w-16">
+    <div className="relative h-16 w-16 text-6xl">
       <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white">
         {(piece >= BLACK ? WHITE_PIECES : BLACK_PIECES).get(piece & 7)}
       </span>
@@ -313,3 +355,29 @@ const BLACK_PIECES = new Map([
   [QUEEN, "♛"],
   [KING, "♚"],
 ]);
+
+const PIECES = new Map([
+  [0, " "],
+  [WHITE + PAWN, "♙"],
+  [WHITE + KNIGHT, "♘"],
+  [WHITE + BISHOP, "♗"],
+  [WHITE + ROOK, "♖"],
+  [WHITE + QUEEN, "♕"],
+  [WHITE + KING, "♔"],
+  [BLACK + PAWN, "♟"],
+  [BLACK + KNIGHT, "♞"],
+  [BLACK + BISHOP, "♝"],
+  [BLACK + ROOK, "♜"],
+  [BLACK + QUEEN, "♛"],
+  [BLACK + KING, "♚"],
+]);
+
+function posString(pos: number) {
+  if (isFinite(pos)) {
+    const row = "ABCDEFGH"[Math.floor(pos / 8)];
+    const col = "12345678"[pos % 8];
+    return row + col;
+  } else {
+    return "";
+  }
+}
