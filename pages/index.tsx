@@ -31,11 +31,6 @@ export default function Home() {
       let from = BASE64.indexOf(src[i + 0]);
       let to = BASE64.indexOf(src[i + 1]);
 
-      if ((i & 2) === 2) {
-        from ^= 63;
-        to ^= 63;
-      }
-
       dest.push([from, to]);
     }
     return dest;
@@ -84,11 +79,14 @@ export default function Home() {
 
   const { x0, y0, dx, dy } = useMemo(() => {
     if (Array.isArray(move)) {
-      const x0 = 1 + 2 * (move[0] % 8);
-      const y0 = 1 + 2 * Math.floor(move[0] / 8);
+      const from = rowcol(move[0], blacksMove);
+      const to = rowcol(move[1], blacksMove);
 
-      const x1 = 1 + 2 * (move[1] % 8);
-      const y1 = 1 + 2 * Math.floor(move[1] / 8);
+      const x0 = 1 + 2 * from[1];
+      const y0 = 1 + 2 * from[0];
+
+      const x1 = 1 + 2 * to[1];
+      const y1 = 1 + 2 * to[0];
 
       const dx = x1 - x0;
       const dy = y1 - y0;
@@ -138,14 +136,20 @@ export default function Home() {
                               //   row * 8 + col,
                               // ]);
                               setMove([
-                                cursorPos[0] * 8 + cursorPos[1],
-                                row * 8 + col,
+                                boardIndex(...cursorPos, blacksMove),
+                                boardIndex(row, col, blacksMove),
                               ]);
                               // setHistory(newHistory);
                             }
                             setCursorPos(null);
                           } else {
-                            if (board[row * 8 + col]) {
+                            const p = board[boardIndex(row, col, blacksMove)];
+
+                            if (
+                              p != 0 &&
+                              ((p >= BLACK && blacksMove) ||
+                                (p < BLACK && !blacksMove))
+                            ) {
                               setCursorPos([row, col]);
                             }
                           }
@@ -219,6 +223,7 @@ export default function Home() {
       </div>
 
       <div className="flex flex-row gap-4">
+        <p>{blacksMove ? "Black" : "White"} player</p>
         <p>Your move</p>
 
         <div className="outline-1 outline outline-black w-24 text-center">
@@ -268,9 +273,8 @@ export default function Home() {
           }
         )}
       >
-        <p>
-          Send the following link to your opponent and wait for a new link in
-          response
+        <p className="text-center">
+          Send the following link to your opponent
         </p>
         <div className="flex flex-row gap-1">
           <input
@@ -380,4 +384,20 @@ function posString(pos: number) {
   } else {
     return "";
   }
+}
+
+function boardIndex(row: number, col: number, blacksMove: boolean) {
+  return (row * 8 + col) ^ (blacksMove ? 63 : 0);
+}
+
+function rowcol(boardIndex: number, blacksMove: boolean) {
+  let row = Math.floor(boardIndex / 8);
+  let col = boardIndex % 8;
+
+  if (blacksMove) {
+    row = 7 - row;
+    col = 7 - col;
+  }
+
+  return [row, col];
 }
