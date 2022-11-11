@@ -38,6 +38,7 @@ export default function Home() {
 
   // const [history, setHistory] = useState<number[][]>([]);
   const [cursorPos, setCursorPos] = useState<number[] | null>(null);
+  const [hoverPos, setHoverPos] = useState<number[] | null>(null);
 
   const initialBoard = useMemo(() => parseFen(FEN).board, [FEN]);
 
@@ -121,6 +122,36 @@ export default function Home() {
     }
   }, [move]);
 
+  const possibleMoves = useMemo<number[][]>(() => {
+    const moves = [];
+    if (Array.isArray(hoverPos)) {
+      const [row, col] = hoverPos;
+
+      switch (board[row * 8 + col] & 7) {
+        case PAWN:
+          if (board[(row - 1) * 8 + col] === 0) {
+            moves.push([row - 1, col]);
+          }
+          if (board[(row - 1) * 8 + col - 1] >= BLACK) {
+            moves.push([row - 1, col - 1]);
+          }
+          if (board[(row - 1) * 8 + col + 1] >= BLACK) {
+            moves.push([row - 1, col + 1]);
+          }
+          if (row === 6 && board[(row - 2) * 8 + col] === 0) {
+            moves.push([row - 2, col]);
+          }
+          break;
+      }
+
+      return moves.filter(
+        ([row, col]) => row >= 0 && row < 8 && col >= 0 && col < 8
+      );
+    } else {
+      return [];
+    }
+  }, [board, hoverPos]);
+
   return (
     <div className="w-full min-h-full flex flex-col items-center justify-center gap-4 py-4">
       <h1 className="text-3xl font-black">
@@ -168,50 +199,55 @@ export default function Home() {
                           className={twCascade("w-16 h-16 relative", {
                             "bg-slate-300":
                               ((row ^ col) & 1) ^ (blacksMove ? 1 : 0),
-                            "border-solid border-2 border-black":
+                            "border-solid border-4 border-slate-600":
                               Array.isArray(cursorPos) &&
                               cursorPos[0] === row &&
                               cursorPos[1] === col,
                           })}
                           onClick={(ev) => {
                             if (move === null) {
-                              if (Array.isArray(cursorPos)) {
-                                if (
-                                  cursorPos[0] === row &&
-                                  cursorPos[1] === col
-                                ) {
-                                } else {
-                                  // const newHistory = [...history];
-                                  // newHistory.push([
-                                  //   cursorPos[0] * 8 + cursorPos[1],
-                                  //   row * 8 + col,
-                                  // ]);
-                                  setMove([
-                                    boardIndex(...cursorPos, blacksMove),
-                                    boardIndex(row, col, blacksMove),
-                                  ]);
-                                  // setHistory(newHistory);
-                                }
-                                setCursorPos(null);
-                              } else {
-                                const p =
-                                  board[boardIndex(row, col, blacksMove)];
+                              const p = board[boardIndex(row, col, blacksMove)];
 
-                                if (
-                                  p != 0 &&
-                                  ((p >= BLACK && blacksMove) ||
-                                    (p < BLACK && !blacksMove))
-                                ) {
-                                  setCursorPos([row, col]);
-                                }
+                              if (
+                                Array.isArray(cursorPos) &&
+                                cursorPos[0] === row &&
+                                cursorPos[1] === col
+                              ) {
+                                setCursorPos(null);
+                              } else if (
+                                p != 0 &&
+                                ((p >= BLACK && blacksMove) ||
+                                  (p < BLACK && !blacksMove))
+                              ) {
+                                setCursorPos([row, col]);
+                              } else if (Array.isArray(cursorPos)) {
+                                // const newHistory = [...history];
+                                // newHistory.push([
+                                //   cursorPos[0] * 8 + cursorPos[1],
+                                //   row * 8 + col,
+                                // ]);
+                                setMove([
+                                  boardIndex(...cursorPos, blacksMove),
+                                  boardIndex(row, col, blacksMove),
+                                ]);
+                                // setHistory(newHistory);
                               }
                             }
                           }}
+                          onMouseOver={() => void setHoverPos([row, col])}
+                          onMouseOut={() => void setHoverPos(null)}
                         ></button>
                       ))}
                   </div>
                 ))}
             </div>
+            {possibleMoves.map(([row, col], i) => (
+              <div
+                key={i}
+                className="absolute h-16 w-16 pointer-events-none border-solid border-4 border-slate-500 rounded-full -translate-x-1/2 -translate-y-1/2"
+                style={{ top: row * 64 + 32, left: col * 64 + 32 }}
+              ></div>
+            ))}
             {board
               .map((piece, i) => ({
                 piece,
@@ -228,7 +264,6 @@ export default function Home() {
                   <Piece piece={piece} />
                 </div>
               ))}
-
             <svg
               className="absolute inset-0 pointer-events-none"
               viewBox="0 0 16 16"
@@ -264,7 +299,7 @@ export default function Home() {
                     fill="none"
                     strokeWidth="0.1"
                     stroke="black"
-                    marker-end="url(#arrow)"
+                    markerEnd="url(#arrow)"
                     strokeLinecap="round"
                   />
                 </>
