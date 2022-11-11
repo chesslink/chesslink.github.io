@@ -142,6 +142,77 @@ export default function Home() {
             moves.push([row - 2, col]);
           }
           break;
+        // case KNIGHT:
+        case BISHOP:
+          for (const [dr, dc] of [
+            [-1, -1],
+            [1, 1],
+            [1, -1],
+            [-1, 1],
+          ]) {
+            for (
+              let [r, c] = [row + dr, col + dc];
+              r >= 0 && r < 8 && c >= 0 && c < 8;
+              r += dr, c += dc
+            ) {
+              if (board[r * 8 + c] && board[r * 8 + c] < BLACK) {
+                break;
+              }
+              moves.push([r, c]);
+              if (board[r * 8 + c] >= BLACK) {
+                break;
+              }
+            }
+          }
+          break;
+        case ROOK:
+          for (const [dr, dc] of [
+            [-1, 0],
+            [1, 0],
+            [0, -1],
+            [0, 1],
+          ]) {
+            for (
+              let [r, c] = [row + dr, col + dc];
+              r >= 0 && r < 8 && c >= 0 && c < 8;
+              r += dr, c += dc
+            ) {
+              if (board[r * 8 + c] && board[r * 8 + c] < BLACK) {
+                break;
+              }
+              moves.push([r, c]);
+              if (board[r * 8 + c] >= BLACK) {
+                break;
+              }
+            }
+          }
+          break;
+        case QUEEN:
+          for (const [dr, dc] of [
+            [-1, 0],
+            [1, 0],
+            [0, -1],
+            [0, 1],
+            [-1, -1],
+            [1, 1],
+            [1, -1],
+            [-1, 1],
+          ]) {
+            for (
+              let [r, c] = [row + dr, col + dc];
+              r >= 0 && r < 8 && c >= 0 && c < 8;
+              r += dr, c += dc
+            ) {
+              if (board[r * 8 + c] && board[r * 8 + c] < BLACK) {
+                break;
+              }
+              moves.push([r, c]);
+              if (board[r * 8 + c] >= BLACK) {
+                break;
+              }
+            }
+          }
+          break;
       }
 
       return moves.filter(
