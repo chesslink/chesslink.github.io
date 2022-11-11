@@ -1,7 +1,7 @@
 import Head from "next/head";
 import Image from "next/image";
 import styles from "../styles/Home.module.css";
-import { useMemo, useState } from "react";
+import { ReactHTMLElement, useEffect, useMemo, useRef, useState } from "react";
 import { twCascade } from "@mariusmarais/tailwind-cascade";
 import { useRouter } from "next/router";
 import Link from "next/link";
@@ -43,21 +43,28 @@ export default function Home() {
 
   const [move, setMove] = useState<number[] | null>(null);
 
-  const board = useMemo(() => {
+  const { board, lostPieces } = useMemo(() => {
     const board = [...initialBoard];
+    const lostPieces = [];
 
     for (const [from, to] of history) {
+      if (board[to]) {
+        lostPieces.push(board[to]);
+      }
       board[to] = board[from];
       board[from] = 0;
     }
 
     if (Array.isArray(move)) {
       const [from, to] = move;
+      if (board[to]) {
+        lostPieces.push(board[to]);
+      }
       board[to] = board[from];
       board[from] = 0;
     }
 
-    return board;
+    return { board, lostPieces };
   }, [FEN, history, move]);
 
   const blacksMove = history.length % 2 != 0;
@@ -72,10 +79,11 @@ export default function Home() {
     [history, move]
   );
 
-  const newStateLink = useMemo(
-    () => `http://localhost:3000/?state=${newEncodedHistory}`,
-    [newEncodedHistory]
-  );
+  const newStateLink = useMemo(() => {
+    return `${
+      typeof window !== "undefined" ? window.location.origin : ""
+    }/?state=${newEncodedHistory}`;
+  }, [newEncodedHistory]);
 
   const { x0, y0, dx, dy } = useMemo(() => {
     if (Array.isArray(move)) {
@@ -104,122 +112,191 @@ export default function Home() {
 
   const [showLink, setShowLink] = useState(false);
 
+  const linkInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    // TODO: use input onChange event instead?
+    if (Array.isArray(move)) {
+      linkInputRef.current?.focus();
+    }
+  }, [move]);
+
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center gap-4">
-      <div className="relative border-slate-300 border-8 border-double">
-        <div className="flex flex-col">
+    <div className="w-full min-h-full flex flex-col items-center justify-center gap-4 py-4">
+      <h1 className="text-3xl font-black">
+        chess<span className="text-slate-400">by</span>email
+        <span className="text-2xl">.com</span>
+      </h1>
+      <div className="flex flex-col">
+        <div className="flex flex-row justify-start h-16 -space-x-4">
+          {lostPieces
+            .filter((piece) => (blacksMove ? piece < BLACK : piece >= BLACK))
+            .map((piece, i) => (
+              <RawPiece key={i} className="" piece={piece} />
+            ))}
+        </div>
+        <div className="flex flex-row w-full justify-center text-slate-500 font-bold">
           {Array(8)
             .fill(0)
-            .map((_, row) => (
-              <div key={row} className="flex flex-row">
-                {Array(8)
-                  .fill(0)
-                  .map((_, col) => (
-                    <button
-                      key={col}
-                      className={twCascade("w-16 h-16 relative", {
-                        "bg-slate-300":
-                          ((row ^ col) & 1) ^ (blacksMove ? 1 : 0),
-                        "border-solid border-2 border-black":
-                          Array.isArray(cursorPos) &&
-                          cursorPos[0] === row &&
-                          cursorPos[1] === col,
-                      })}
-                      onClick={(ev) => {
-                        if (move === null) {
-                          if (Array.isArray(cursorPos)) {
-                            if (cursorPos[0] === row && cursorPos[1] === col) {
-                            } else {
-                              // const newHistory = [...history];
-                              // newHistory.push([
-                              //   cursorPos[0] * 8 + cursorPos[1],
-                              //   row * 8 + col,
-                              // ]);
-                              setMove([
-                                boardIndex(...cursorPos, blacksMove),
-                                boardIndex(row, col, blacksMove),
-                              ]);
-                              // setHistory(newHistory);
-                            }
-                            setCursorPos(null);
-                          } else {
-                            const p = board[boardIndex(row, col, blacksMove)];
-
-                            if (
-                              p != 0 &&
-                              ((p >= BLACK && blacksMove) ||
-                                (p < BLACK && !blacksMove))
-                            ) {
-                              setCursorPos([row, col]);
-                            }
-                          }
-                        }
-                      }}
-                    ></button>
-                  ))}
+            .map((_, i) => (
+              <div key={i} className="w-16 text-center rotate-180">
+                {"ABCDEFGH"[blacksMove ? 7 - i : i]}
               </div>
             ))}
         </div>
-        {board
-          .map((piece, i) => ({
-            piece,
-            row: Math.floor(i / 8) ^ (blacksMove ? 7 : 0),
-            col: i % 8 ^ (blacksMove ? 7 : 0),
-          }))
-          .filter(({ piece }) => piece !== 0)
-          .map(({ piece, row, col }, i) => (
-            <div
-              key={i}
-              className="absolute h-16 w-16 pointer-events-none"
-              style={{ top: row * 64, left: col * 64 }}
-            >
-              <Piece piece={piece} />
+        <div className="flex flex-row">
+          <div className="flex flex-col h-full justify-center items-center w-6 text-slate-500 font-bold">
+            {Array(8)
+              .fill(0)
+              .map((_, i) => (
+                <div key={i} className="h-16 flex items-center">
+                  {blacksMove ? 1 + i : 8 - i}
+                </div>
+              ))}
+          </div>
+          <div className="relative border-slate-300 border-8 border-double">
+            <div className="flex flex-col">
+              {Array(8)
+                .fill(0)
+                .map((_, row) => (
+                  <div key={row} className="flex flex-row">
+                    {Array(8)
+                      .fill(0)
+                      .map((_, col) => (
+                        <button
+                          key={col}
+                          className={twCascade("w-16 h-16 relative", {
+                            "bg-slate-300":
+                              ((row ^ col) & 1) ^ (blacksMove ? 1 : 0),
+                            "border-solid border-2 border-black":
+                              Array.isArray(cursorPos) &&
+                              cursorPos[0] === row &&
+                              cursorPos[1] === col,
+                          })}
+                          onClick={(ev) => {
+                            if (move === null) {
+                              if (Array.isArray(cursorPos)) {
+                                if (
+                                  cursorPos[0] === row &&
+                                  cursorPos[1] === col
+                                ) {
+                                } else {
+                                  // const newHistory = [...history];
+                                  // newHistory.push([
+                                  //   cursorPos[0] * 8 + cursorPos[1],
+                                  //   row * 8 + col,
+                                  // ]);
+                                  setMove([
+                                    boardIndex(...cursorPos, blacksMove),
+                                    boardIndex(row, col, blacksMove),
+                                  ]);
+                                  // setHistory(newHistory);
+                                }
+                                setCursorPos(null);
+                              } else {
+                                const p =
+                                  board[boardIndex(row, col, blacksMove)];
+
+                                if (
+                                  p != 0 &&
+                                  ((p >= BLACK && blacksMove) ||
+                                    (p < BLACK && !blacksMove))
+                                ) {
+                                  setCursorPos([row, col]);
+                                }
+                              }
+                            }
+                          }}
+                        ></button>
+                      ))}
+                  </div>
+                ))}
             </div>
-          ))}
+            {board
+              .map((piece, i) => ({
+                piece,
+                row: Math.floor(i / 8) ^ (blacksMove ? 7 : 0),
+                col: i % 8 ^ (blacksMove ? 7 : 0),
+              }))
+              .filter(({ piece }) => piece !== 0)
+              .map(({ piece, row, col }, i) => (
+                <div
+                  key={i}
+                  className="absolute h-16 w-16 pointer-events-none"
+                  style={{ top: row * 64, left: col * 64 }}
+                >
+                  <Piece piece={piece} />
+                </div>
+              ))}
 
-        <svg
-          className="absolute inset-0 pointer-events-none"
-          viewBox="0 0 16 16"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <defs>
-            <marker
-              id="arrow"
-              viewBox="0 0 1 1"
-              refX="0.5"
-              refY="0.5"
-              markerWidth="6"
-              markerHeight="6"
-              orient="auto-start-reverse"
+            <svg
+              className="absolute inset-0 pointer-events-none"
+              viewBox="0 0 16 16"
+              xmlns="http://www.w3.org/2000/svg"
             >
-              <path d="M 0 0 L 1 0.5 L 0 1 z" />
-            </marker>
-            <marker
-              id="dot"
-              viewBox="0 0 10 10"
-              refX="5"
-              refY="5"
-              markerWidth="5"
-              markerHeight="5"
-            >
-              <circle cx="5" cy="5" r="5" fill="red" />
-            </marker>
-          </defs>
-          {Array.isArray(move) && (
-            <>
-              <polyline
-                points={`${x0},${y0} ${x0 + dx},${y0 + dy}`}
-                fill="none"
-                strokeWidth="0.1"
-                stroke="black"
-                marker-end="url(#arrow)"
-                strokeLinecap="round"
-              />
-            </>
-          )}
-        </svg>
-
-        {showLink && <></>}
+              <defs>
+                <marker
+                  id="arrow"
+                  viewBox="0 0 1 1"
+                  refX="0.5"
+                  refY="0.5"
+                  markerWidth="6"
+                  markerHeight="6"
+                  orient="auto-start-reverse"
+                >
+                  <path d="M 0 0 L 1 0.5 L 0 1 z" />
+                </marker>
+                <marker
+                  id="dot"
+                  viewBox="0 0 10 10"
+                  refX="5"
+                  refY="5"
+                  markerWidth="5"
+                  markerHeight="5"
+                >
+                  <circle cx="5" cy="5" r="5" fill="red" />
+                </marker>
+              </defs>
+              {Array.isArray(move) && (
+                <>
+                  <polyline
+                    points={`${x0},${y0} ${x0 + dx},${y0 + dy}`}
+                    fill="none"
+                    strokeWidth="0.1"
+                    stroke="black"
+                    marker-end="url(#arrow)"
+                    strokeLinecap="round"
+                  />
+                </>
+              )}
+            </svg>
+          </div>
+          <div className="flex flex-col h-full justify-center items-center w-6 text-slate-500 font-bold">
+            {Array(8)
+              .fill(0)
+              .map((_, i) => (
+                <div key={i} className="h-16 flex items-center rotate-180">
+                  {blacksMove ? 1 + i : 8 - i}
+                </div>
+              ))}
+          </div>
+        </div>
+        <div className="flex flex-row w-full justify-center text-slate-500 font-bold">
+          {Array(8)
+            .fill(0)
+            .map((_, i) => (
+              <div key={i} className="w-16 text-center">
+                {"ABCDEFGH"[blacksMove ? 7 - i : i]}
+              </div>
+            ))}
+        </div>
+        <div className="flex flex-row justify-start h-16 -space-x-4">
+          {lostPieces
+            .filter((piece) => (blacksMove ? piece >= BLACK : piece < BLACK))
+            .map((piece, i) => (
+              <RawPiece key={i} className="" piece={piece} />
+            ))}
+        </div>
       </div>
 
       <div className="flex flex-row gap-4">
@@ -242,29 +319,6 @@ export default function Home() {
           Undo
         </button>
       </div>
-      {/* <form
-        action="."
-        onSubmit={(ev) => {
-          ev.preventDefault();
-
-          const encodedHistory = history
-            .concat([move || []])
-            .flat()
-            .map((x) => BASE64[x])
-            .join("");
-
-          router.push(`./?h=${encodedHistory}`);
-          setMove(null);
-        }}
-      >
-        <input
-          type="submit"
-          value="Send move"
-          style={{ all: "revert" }}
-          disabled={move === null}
-        />
-      </form> */}
-
       <div
         className={twCascade(
           "flex flex-col gap-2 items-center bg-slate-200 rounded-lg py-4 px-8",
@@ -273,15 +327,15 @@ export default function Home() {
           }
         )}
       >
-        <p className="text-center">
-          Send the following link to your opponent
-        </p>
+        <p className="text-center">Send the following link to your opponent</p>
         <div className="flex flex-row gap-1">
           <input
+            ref={linkInputRef}
             style={{ all: "revert" }}
             type="text"
             value={newStateLink}
             readOnly
+            onFocus={(ev) => void ev.target.select()}
           />
           <button
             style={{ all: "revert" }}
@@ -297,15 +351,23 @@ export default function Home() {
   );
 }
 
-function Piece({ piece }: { piece: number }) {
+function Piece({ className, piece }: { className: string; piece: number }) {
   return (
-    <div className="relative h-16 w-16 text-6xl">
+    <div className={twCascade("relative h-16 w-16 text-6xl", className)}>
       <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white">
         {(piece >= BLACK ? WHITE_PIECES : BLACK_PIECES).get(piece & 7)}
       </span>
       <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
         {(piece < BLACK ? WHITE_PIECES : BLACK_PIECES).get(piece & 7)}
       </span>
+    </div>
+  );
+}
+
+function RawPiece({ className, piece }: { className: string; piece: number }) {
+  return (
+    <div className={twCascade("text-6xl", className)}>
+      {(piece < BLACK ? WHITE_PIECES : BLACK_PIECES).get(piece & 7)}
     </div>
   );
 }
@@ -378,9 +440,9 @@ const PIECES = new Map([
 
 function posString(pos: number) {
   if (isFinite(pos)) {
-    const row = "ABCDEFGH"[Math.floor(pos / 8)];
-    const col = "12345678"[pos % 8];
-    return row + col;
+    const col = "ABCDEFGH"[pos % 8];
+    const row = "87654321"[Math.floor(pos / 8)];
+    return col + row;
   } else {
     return "";
   }
