@@ -142,7 +142,20 @@ export default function Home() {
             moves.push([row - 2, col]);
           }
           break;
-        // case KNIGHT:
+        case KNIGHT:
+          moves.push(
+            ...[
+              [-2, -1],
+              [-2, 1],
+              [2, -1],
+              [2, 1],
+              [-1, 2],
+              [1, 2],
+              [-1, -2],
+              [-1, 2],
+            ].map(([dr, dc]) => [row + dr, col + dc])
+          );
+          break;
         case BISHOP:
           for (const [dr, dc] of [
             [-1, -1],
@@ -203,20 +216,36 @@ export default function Home() {
               r >= 0 && r < 8 && c >= 0 && c < 8;
               r += dr, c += dc
             ) {
-              if (board[r * 8 + c] && board[r * 8 + c] < BLACK) {
-                break;
-              }
               moves.push([r, c]);
-              if (board[r * 8 + c] >= BLACK) {
+              if (board[r * 8 + c]) {
                 break;
               }
             }
           }
           break;
+        case KING:
+          moves.push(
+            ...[
+              [-1, -1],
+              [-1, 0],
+              [-1, 1],
+              [0, -1],
+              [0, 1],
+              [1, -1],
+              [1, 0],
+              [1, 1],
+            ].map(([dr, dc]) => [row + dr, col + dc])
+          );
+          break;
       }
 
       return moves.filter(
-        ([row, col]) => row >= 0 && row < 8 && col >= 0 && col < 8
+        ([row, col]) =>
+          row >= 0 &&
+          row < 8 &&
+          col >= 0 &&
+          col < 8 &&
+          (board[row * 8 + col] === 0 || board[row * 8 + col] >= BLACK)
       );
     } else {
       return [];
@@ -315,7 +344,7 @@ export default function Home() {
             {possibleMoves.map(([row, col], i) => (
               <div
                 key={i}
-                className="absolute h-16 w-16 pointer-events-none border-solid border-4 border-slate-500 rounded-full -translate-x-1/2 -translate-y-1/2"
+                className="absolute h-14 w-14 pointer-events-none border-dotted border-4 border-slate-500 rounded-full -translate-x-1/2 -translate-y-1/2"
                 style={{ top: row * 64 + 32, left: col * 64 + 32 }}
               ></div>
             ))}
