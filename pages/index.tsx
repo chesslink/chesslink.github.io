@@ -122,134 +122,8 @@ export default function Home() {
     }
   }, [move]);
 
-  const possibleMoves = useMemo<number[][]>(() => {
-    const moves = [];
-    if (Array.isArray(hoverPos)) {
-      const [row, col] = hoverPos;
-
-      switch (board[row * 8 + col] & 7) {
-        case PAWN:
-          if (board[(row - 1) * 8 + col] === 0) {
-            moves.push([row - 1, col]);
-          }
-          if (board[(row - 1) * 8 + col - 1] >= BLACK) {
-            moves.push([row - 1, col - 1]);
-          }
-          if (board[(row - 1) * 8 + col + 1] >= BLACK) {
-            moves.push([row - 1, col + 1]);
-          }
-          if (row === 6 && board[(row - 2) * 8 + col] === 0) {
-            moves.push([row - 2, col]);
-          }
-          break;
-        case KNIGHT:
-          moves.push(
-            ...[
-              [-2, -1],
-              [-2, 1],
-              [2, -1],
-              [2, 1],
-              [-1, 2],
-              [1, 2],
-              [-1, -2],
-              [-1, 2],
-            ].map(([dr, dc]) => [row + dr, col + dc])
-          );
-          break;
-        case BISHOP:
-          for (const [dr, dc] of [
-            [-1, -1],
-            [1, 1],
-            [1, -1],
-            [-1, 1],
-          ]) {
-            for (
-              let [r, c] = [row + dr, col + dc];
-              r >= 0 && r < 8 && c >= 0 && c < 8;
-              r += dr, c += dc
-            ) {
-              if (board[r * 8 + c] && board[r * 8 + c] < BLACK) {
-                break;
-              }
-              moves.push([r, c]);
-              if (board[r * 8 + c] >= BLACK) {
-                break;
-              }
-            }
-          }
-          break;
-        case ROOK:
-          for (const [dr, dc] of [
-            [-1, 0],
-            [1, 0],
-            [0, -1],
-            [0, 1],
-          ]) {
-            for (
-              let [r, c] = [row + dr, col + dc];
-              r >= 0 && r < 8 && c >= 0 && c < 8;
-              r += dr, c += dc
-            ) {
-              if (board[r * 8 + c] && board[r * 8 + c] < BLACK) {
-                break;
-              }
-              moves.push([r, c]);
-              if (board[r * 8 + c] >= BLACK) {
-                break;
-              }
-            }
-          }
-          break;
-        case QUEEN:
-          for (const [dr, dc] of [
-            [-1, 0],
-            [1, 0],
-            [0, -1],
-            [0, 1],
-            [-1, -1],
-            [1, 1],
-            [1, -1],
-            [-1, 1],
-          ]) {
-            for (
-              let [r, c] = [row + dr, col + dc];
-              r >= 0 && r < 8 && c >= 0 && c < 8;
-              r += dr, c += dc
-            ) {
-              moves.push([r, c]);
-              if (board[r * 8 + c]) {
-                break;
-              }
-            }
-          }
-          break;
-        case KING:
-          moves.push(
-            ...[
-              [-1, -1],
-              [-1, 0],
-              [-1, 1],
-              [0, -1],
-              [0, 1],
-              [1, -1],
-              [1, 0],
-              [1, 1],
-            ].map(([dr, dc]) => [row + dr, col + dc])
-          );
-          break;
-      }
-
-      return moves.filter(
-        ([row, col]) =>
-          row >= 0 &&
-          row < 8 &&
-          col >= 0 &&
-          col < 8 &&
-          (board[row * 8 + col] === 0 || board[row * 8 + col] >= BLACK)
-      );
-    } else {
-      return [];
-    }
+  const possibleMoves = useMemo<number[]>(() => {
+    return getPossibleMoves(board, hoverPos);
   }, [board, hoverPos]);
 
   return (
@@ -293,7 +167,11 @@ export default function Home() {
                   <div key={row} className="flex flex-row">
                     {Array(8)
                       .fill(0)
-                      .map((_, col) => (
+                      .map((_, col) => [
+                        row ^ (blacksMove ? 7 : 0),
+                        col ^ (blacksMove ? 7 : 0),
+                      ])
+                      .map(([row, col]) => (
                         <button
                           key={col}
                           className={twCascade("w-16 h-16 relative", {
@@ -306,7 +184,7 @@ export default function Home() {
                           })}
                           onClick={(ev) => {
                             if (move === null) {
-                              const p = board[boardIndex(row, col, blacksMove)];
+                              const p = board[row * 8 + col];
 
                               if (
                                 Array.isArray(cursorPos) &&
@@ -321,16 +199,17 @@ export default function Home() {
                               ) {
                                 setCursorPos([row, col]);
                               } else if (Array.isArray(cursorPos)) {
-                                // const newHistory = [...history];
-                                // newHistory.push([
-                                //   cursorPos[0] * 8 + cursorPos[1],
-                                //   row * 8 + col,
-                                // ]);
-                                setMove([
-                                  boardIndex(...cursorPos, blacksMove),
-                                  boardIndex(row, col, blacksMove),
-                                ]);
-                                // setHistory(newHistory);
+                                const allowed = getPossibleMoves(
+                                  board,
+                                  cursorPos
+                                ).includes(row * 8 + col);
+                                if (allowed) {
+                                  setMove([
+                                    cursorPos[0] * 8 + cursorPos[1],
+                                    row * 8 + col,
+                                  ]);
+                                  setCursorPos(null);
+                                }
                               }
                             }
                           }}
@@ -341,13 +220,18 @@ export default function Home() {
                   </div>
                 ))}
             </div>
-            {possibleMoves.map(([row, col], i) => (
-              <div
-                key={i}
-                className="absolute h-14 w-14 pointer-events-none border-dotted border-4 border-slate-500 rounded-full -translate-x-1/2 -translate-y-1/2"
-                style={{ top: row * 64 + 32, left: col * 64 + 32 }}
-              ></div>
-            ))}
+            {possibleMoves
+              .map((i) => [
+                Math.floor(i / 8) ^ (blacksMove ? 7 : 0),
+                i % 8 ^ (blacksMove ? 7 : 0),
+              ])
+              .map(([row, col], i) => (
+                <div
+                  key={i}
+                  className="absolute h-14 w-14 pointer-events-none border-dotted border-4 border-slate-500 rounded-full -translate-x-1/2 -translate-y-1/2"
+                  style={{ top: row * 64 + 32, left: col * 64 + 32 }}
+                ></div>
+              ))}
             {board
               .map((piece, i) => ({
                 piece,
@@ -597,4 +481,143 @@ function rowcol(boardIndex: number, blacksMove: boolean) {
   }
 
   return [row, col];
+}
+
+function getPossibleMoves(board: number[], pos: number[] | null): number[] {
+  if (!Array.isArray(pos)) {
+    return [];
+  }
+
+  const moves = [];
+  const [row, col] = pos;
+  const piece = board[row * 8 + col];
+  const d = piece >= BLACK ? 1 : -1;
+
+  switch (piece & 7) {
+    case PAWN:
+      if (board[(row + d) * 8 + col] === 0) {
+        moves.push([row + d, col]);
+      }
+      if (board[(row + d) * 8 + col - 1]) {
+        moves.push([row + d, col - 1]);
+      }
+      if (board[(row + d) * 8 + col + 1]) {
+        moves.push([row + d, col + 1]);
+      }
+      if (
+        ((piece < BLACK && row === 6) || (piece >= BLACK && row === 1)) &&
+        board[(row + 2 * d) * 8 + col] === 0
+      ) {
+        moves.push([row + 2 * d, col]);
+      }
+      break;
+    case KNIGHT:
+      moves.push(
+        ...[
+          [-2, -1],
+          [-2, 1],
+          [2, -1],
+          [2, 1],
+          [-1, 2],
+          [1, 2],
+          [-1, -2],
+          [-1, 2],
+        ].map(([dr, dc]) => [row + dr, col + dc])
+      );
+      break;
+    case BISHOP:
+      for (const [dr, dc] of [
+        [-1, -1],
+        [1, 1],
+        [1, -1],
+        [-1, 1],
+      ]) {
+        for (
+          let [r, c] = [row + dr, col + dc];
+          r >= 0 && r < 8 && c >= 0 && c < 8;
+          r += dr, c += dc
+        ) {
+          if (board[r * 8 + c] && board[r * 8 + c] < BLACK) {
+            break;
+          }
+          moves.push([r, c]);
+          if (board[r * 8 + c] >= BLACK) {
+            break;
+          }
+        }
+      }
+      break;
+    case ROOK:
+      for (const [dr, dc] of [
+        [-1, 0],
+        [1, 0],
+        [0, -1],
+        [0, 1],
+      ]) {
+        for (
+          let [r, c] = [row + dr, col + dc];
+          r >= 0 && r < 8 && c >= 0 && c < 8;
+          r += dr, c += dc
+        ) {
+          if (board[r * 8 + c] && board[r * 8 + c] < BLACK) {
+            break;
+          }
+          moves.push([r, c]);
+          if (board[r * 8 + c] >= BLACK) {
+            break;
+          }
+        }
+      }
+      break;
+    case QUEEN:
+      for (const [dr, dc] of [
+        [-1, 0],
+        [1, 0],
+        [0, -1],
+        [0, 1],
+        [-1, -1],
+        [1, 1],
+        [1, -1],
+        [-1, 1],
+      ]) {
+        for (
+          let [r, c] = [row + dr, col + dc];
+          r >= 0 && r < 8 && c >= 0 && c < 8;
+          r += dr, c += dc
+        ) {
+          moves.push([r, c]);
+          if (board[r * 8 + c]) {
+            break;
+          }
+        }
+      }
+      break;
+    case KING:
+      moves.push(
+        ...[
+          [-1, -1],
+          [-1, 0],
+          [-1, 1],
+          [0, -1],
+          [0, 1],
+          [1, -1],
+          [1, 0],
+          [1, 1],
+        ].map(([dr, dc]) => [row + dr, col + dc])
+      );
+      break;
+  }
+
+  return moves
+    .filter(
+      ([r, c]) =>
+        r >= 0 &&
+        r < 8 &&
+        c >= 0 &&
+        c < 8 &&
+        (board[r * 8 + c] === 0 ||
+          (piece < BLACK && board[r * 8 + c] >= BLACK) ||
+          (piece >= BLACK && board[r * 8 + c] < BLACK))
+    )
+    .map(([r, c]) => r * 8 + c);
 }
