@@ -372,7 +372,10 @@ export default function Home() {
 
 function Piece({ className, piece }: { className: string; piece: number }) {
   return (
-    <div className={twCascade("relative h-16 w-16 text-6xl", className)}>
+    <div
+      className={twCascade("relative h-16 w-16 text-6xl", className)}
+      title={PIECE_NAMES.get(piece)}
+    >
       <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white">
         {(piece >= BLACK ? WHITE_PIECES : BLACK_PIECES).get(piece & 7)}
       </span>
@@ -455,6 +458,22 @@ const PIECES = new Map([
   [BLACK + ROOK, "♜"],
   [BLACK + QUEEN, "♛"],
   [BLACK + KING, "♚"],
+]);
+
+const PIECE_NAMES = new Map([
+  [0, ""],
+  [WHITE + PAWN, "white pawn"],
+  [WHITE + KNIGHT, "white knight"],
+  [WHITE + BISHOP, "white bishop"],
+  [WHITE + ROOK, "white rook"],
+  [WHITE + QUEEN, "white queen"],
+  [WHITE + KING, "white king"],
+  [BLACK + PAWN, "black pawn"],
+  [BLACK + KNIGHT, "black knight"],
+  [BLACK + BISHOP, "black bishop"],
+  [BLACK + ROOK, "black rook"],
+  [BLACK + QUEEN, "black queen"],
+  [BLACK + KING, "black king"],
 ]);
 
 function posString(pos: number) {
