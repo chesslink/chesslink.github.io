@@ -36,37 +36,37 @@ export default function Home() {
     return dest;
   }, [inputHistory]);
 
-  // const [history, setHistory] = useState<number[][]>([]);
-  const [cursorPos, setCursorPos] = useState<number[] | null>(null);
-  const [hoverPos, setHoverPos] = useState<number[] | null>(null);
+  const [cursorPos, setCursorPos] = useState<number | null>(null);
+  const [hoverPos, setHoverPos] = useState<number | null>(null);
 
   const initialBoard = useMemo(() => parseFen(FEN).board, [FEN]);
 
   const [move, setMove] = useState<number[] | null>(null);
 
-  const { board, lostPieces } = useMemo(() => {
-    const board = [...initialBoard];
-    const lostPieces = [];
+  const { board, lostPieces }: { board: number[]; lostPieces: number[] } =
+    useMemo(() => {
+      const board = [...initialBoard];
+      const lostPieces = [];
 
-    for (const [from, to] of history) {
-      if (board[to]) {
-        lostPieces.push(board[to]);
+      for (const [from, to] of history) {
+        if (board[to]) {
+          lostPieces.push(board[to]);
+        }
+        board[to] = board[from];
+        board[from] = 0;
       }
-      board[to] = board[from];
-      board[from] = 0;
-    }
 
-    if (Array.isArray(move)) {
-      const [from, to] = move;
-      if (board[to]) {
-        lostPieces.push(board[to]);
+      if (Array.isArray(move)) {
+        const [from, to] = move;
+        if (board[to]) {
+          lostPieces.push(board[to]);
+        }
+        board[to] = board[from];
+        board[from] = 0;
       }
-      board[to] = board[from];
-      board[from] = 0;
-    }
 
-    return { board, lostPieces };
-  }, [FEN, history, move]);
+      return { board, lostPieces };
+    }, [FEN, history, move]);
 
   const blacksMove = history.length % 2 != 0;
 
@@ -123,8 +123,8 @@ export default function Home() {
   }, [move]);
 
   const possibleMoves = useMemo<number[]>(() => {
-    return getPossibleMoves(board, hoverPos);
-  }, [board, hoverPos]);
+    return getPossibleMoves(board, cursorPos);
+  }, [board, cursorPos]);
 
   return (
     <div className="w-full min-h-full flex flex-col items-center justify-center gap-4 py-4">
@@ -170,50 +170,42 @@ export default function Home() {
                       .map((_, col) => [
                         row ^ (blacksMove ? 7 : 0),
                         col ^ (blacksMove ? 7 : 0),
+                        (row * 8 + col) ^ (blacksMove ? 63 : 0),
                       ])
-                      .map(([row, col]) => (
+                      .map(([row, col, i]) => (
                         <button
                           key={col}
                           className={twCascade("w-16 h-16 relative", {
                             "bg-slate-300":
                               ((row ^ col) & 1) ^ (blacksMove ? 1 : 0),
                             "border-solid border-4 border-slate-600":
-                              Array.isArray(cursorPos) &&
-                              cursorPos[0] === row &&
-                              cursorPos[1] === col,
+                              cursorPos === i,
                           })}
                           onClick={(ev) => {
                             if (move === null) {
-                              const p = board[row * 8 + col];
+                              const p = board[i];
 
-                              if (
-                                Array.isArray(cursorPos) &&
-                                cursorPos[0] === row &&
-                                cursorPos[1] === col
-                              ) {
+                              if (cursorPos === i) {
                                 setCursorPos(null);
                               } else if (
                                 p != 0 &&
                                 ((p >= BLACK && blacksMove) ||
                                   (p < BLACK && !blacksMove))
                               ) {
-                                setCursorPos([row, col]);
-                              } else if (Array.isArray(cursorPos)) {
+                                setCursorPos(i);
+                              } else if (cursorPos !== null) {
                                 const allowed = getPossibleMoves(
                                   board,
                                   cursorPos
-                                ).includes(row * 8 + col);
+                                ).includes(i);
                                 if (allowed) {
-                                  setMove([
-                                    cursorPos[0] * 8 + cursorPos[1],
-                                    row * 8 + col,
-                                  ]);
+                                  setMove([cursorPos, i]);
                                   setCursorPos(null);
                                 }
                               }
                             }
                           }}
-                          onMouseOver={() => void setHoverPos([row, col])}
+                          onMouseOver={() => void setHoverPos(i)}
                           onMouseOut={() => void setHoverPos(null)}
                         ></button>
                       ))}
@@ -370,7 +362,7 @@ export default function Home() {
   );
 }
 
-function Piece({ className, piece }: { className: string; piece: number }) {
+function Piece({ className, piece }: { className?: string; piece: number }) {
   return (
     <div
       className={twCascade("relative h-16 w-16 text-6xl", className)}
@@ -486,10 +478,6 @@ function posString(pos: number) {
   }
 }
 
-function boardIndex(row: number, col: number, blacksMove: boolean) {
-  return (row * 8 + col) ^ (blacksMove ? 63 : 0);
-}
-
 function rowcol(boardIndex: number, blacksMove: boolean) {
   let row = Math.floor(boardIndex / 8);
   let col = boardIndex % 8;
@@ -502,14 +490,14 @@ function rowcol(boardIndex: number, blacksMove: boolean) {
   return [row, col];
 }
 
-function getPossibleMoves(board: number[], pos: number[] | null): number[] {
-  if (!Array.isArray(pos)) {
+function getPossibleMoves(board: number[], i: number | null): number[] {
+  if (i === null) {
     return [];
   }
 
   const moves = [];
-  const [row, col] = pos;
-  const piece = board[row * 8 + col];
+  const [row, col] = [Math.floor(i / 8), i % 8];
+  const piece = board[i];
   const d = piece >= BLACK ? 1 : -1;
 
   switch (piece & 7) {
@@ -556,11 +544,8 @@ function getPossibleMoves(board: number[], pos: number[] | null): number[] {
           r >= 0 && r < 8 && c >= 0 && c < 8;
           r += dr, c += dc
         ) {
-          if (board[r * 8 + c] && board[r * 8 + c] < BLACK) {
-            break;
-          }
           moves.push([r, c]);
-          if (board[r * 8 + c] >= BLACK) {
+          if (board[r * 8 + c]) {
             break;
           }
         }
@@ -578,11 +563,8 @@ function getPossibleMoves(board: number[], pos: number[] | null): number[] {
           r >= 0 && r < 8 && c >= 0 && c < 8;
           r += dr, c += dc
         ) {
-          if (board[r * 8 + c] && board[r * 8 + c] < BLACK) {
-            break;
-          }
           moves.push([r, c]);
-          if (board[r * 8 + c] >= BLACK) {
+          if (board[r * 8 + c]) {
             break;
           }
         }
