@@ -43,30 +43,45 @@ export default function Home() {
 
   const [move, setMove] = useState<number[] | null>(null);
 
-  const { board, lostPieces }: { board: number[]; lostPieces: number[] } =
-    useMemo(() => {
-      const board = [...initialBoard];
-      const lostPieces = [];
+  const {
+    board,
+    check,
+    lostPieces,
+  }: { board: number[]; lostPieces: number[] } = useMemo(() => {
+    const board = [...initialBoard];
+    const lostPieces = [];
 
-      for (const [from, to] of history) {
-        if (board[to]) {
-          lostPieces.push(board[to]);
-        }
-        board[to] = board[from];
-        board[from] = 0;
+    let lastPos: number | null = null;
+
+    for (const [from, to] of history) {
+      if (board[to]) {
+        lostPieces.push(board[to]);
       }
+      board[to] = board[from];
+      board[from] = 0;
 
-      if (Array.isArray(move)) {
-        const [from, to] = move;
-        if (board[to]) {
-          lostPieces.push(board[to]);
-        }
-        board[to] = board[from];
-        board[from] = 0;
+      lastPos = to;
+    }
+
+    if (Array.isArray(move)) {
+      const [from, to] = move;
+      if (board[to]) {
+        lostPieces.push(board[to]);
       }
+      board[to] = board[from];
+      board[from] = 0;
 
-      return { board, lostPieces };
-    }, [FEN, history, move]);
+      lastPos = to;
+    }
+
+    const check =
+      lastPos !== null &&
+      getPossibleMoves(board, lastPos)
+        .map((i) => board[i])
+        .includes(board[lastPos] >= BLACK ? WHITE + KING : BLACK + KING);
+
+    return { board, lostPieces, check };
+  }, [FEN, history, move]);
 
   const blacksMove = history.length % 2 != 0;
 
@@ -281,6 +296,33 @@ export default function Home() {
                 </>
               )}
             </svg>
+            {check && (
+              <svg
+                viewBox="0 0 400 100"
+                xmlns="http://www.w3.org/2000/svg"
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-32 pointer-events-none"
+              >
+                <text
+                  className="text-5xl stroke-black fill-white font-serif font-black"
+                  x="50%"
+                  y="50%"
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  strokeWidth="4"
+                  paintOrder="stroke"
+                >
+                  CHECK
+                </text>
+              </svg>
+            )}
+            {/* <div
+              className={twCascade(
+                "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
+                "text-6xl font-serif text-black font-black pointer-events-none"
+              )}
+            >
+              CHECK
+            </div> */}
           </div>
           <div className="flex flex-col h-full justify-center items-center w-6 text-slate-500 font-bold">
             {Array(8)
