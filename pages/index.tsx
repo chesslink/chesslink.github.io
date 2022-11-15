@@ -216,21 +216,29 @@ export default function Home() {
                       .map(([row, col, i]) => (
                         <button
                           disabled={
-                            (cursorPos === null &&
-                              (board[i] === 0 ||
+                            !(
+                              (cursorPos === null &&
+                                move === null &&
+                                board[i] !== 0 &&
                                 (blacksMove
-                                  ? board[i] < BLACK
-                                  : board[i] >= BLACK))) ||
-                            (cursorPos != null &&
-                              !possibleMoves.includes(i) &&
-                              (blacksMove
-                                ? board[i] < BLACK
-                                : board[i] >= BLACK))
+                                  ? board[i] >= BLACK
+                                  : board[i] < BLACK)) ||
+                              (cursorPos !== null &&
+                                move === null &&
+                                possibleMoves.includes(i)) ||
+                              (cursorPos !== null &&
+                                board[i] !== 0 &&
+                                (blacksMove
+                                  ? board[i] >= BLACK
+                                  : board[i] < BLACK)) ||
+                              (cursorPos === null &&
+                                move !== null &&
+                                i === move[0])
+                            )
                           }
                           key={col}
                           className={twCascade("w-16 h-16 relative", {
-                            "bg-slate-300":
-                              ((row ^ col) & 1) ^ (blacksMove ? 1 : 0),
+                            "bg-slate-300": ((row ^ col) & 1) === 1,
                             "border-solid border-4 border-slate-600":
                               cursorPos === i ||
                               (cursorPos === null &&
@@ -439,7 +447,7 @@ export default function Home() {
         className={twCascade(
           "flex flex-col gap-2 items-center bg-slate-200 rounded-lg py-4 px-8",
           {
-            "opacity-0": move === null,
+            "opacity-0": move === null || check,
           }
         )}
       >
