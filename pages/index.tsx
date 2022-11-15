@@ -36,6 +36,9 @@ export default function Home() {
     return dest;
   }, [inputHistory]);
 
+  const [hideWelcome, setHideWelcome] = useState(false);
+  const [hideLink, setHideLink] = useState(false);
+
   const [cursorPos, setCursorPos] = useState<number | null>(null);
   const [hoverPos, setHoverPos] = useState<number | null>(null);
 
@@ -107,21 +110,21 @@ export default function Home() {
 
   const blacksMove = history.length % 2 != 0;
 
-  const newEncodedHistory = useMemo(
-    () =>
-      history
-        .concat([move || []])
-        .flat()
-        .map((x) => BASE64[x])
-        .join(""),
-    [history, move]
-  );
-
   const newStateLink = useMemo(() => {
+    if (move === null || check) {
+      return null;
+    }
+
+    const newEncodedHistory = history
+      .concat([move || []])
+      .flat()
+      .map((x) => BASE64[x])
+      .join("");
+
     return `${
       typeof window !== "undefined" ? window.location.origin : ""
     }/?state=${newEncodedHistory}`;
-  }, [newEncodedHistory]);
+  }, [history, move, check]);
 
   const { x0, y0, dx, dy } = useMemo(() => {
     if (Array.isArray(move)) {
@@ -261,6 +264,7 @@ export default function Home() {
                                 setCursorPos(i);
                               } else if (cursorPos !== null) {
                                 if (possibleMoves.includes(i)) {
+                                  setHideLink(false);
                                   setMove([cursorPos, i]);
                                   setCursorPos(null);
                                 }
@@ -394,6 +398,58 @@ export default function Home() {
             >
               CHECK
             </div> */}
+            {history.length === 0 && !hideWelcome && (
+              <Requester onClose={() => void setHideWelcome(true)}>
+                <p>
+                  Welcome to <i>chessbyemail</i>, a web app for playing
+                  correspondance chess.
+                </p>
+                <p>
+                  When you've made your first move, a link is generated. You
+                  send this link to your opponent who continues the game.
+                </p>
+                <p>
+                  The state of the game is not stored on this server, it is
+                  encoded in the links you send when playing.
+                </p>
+                <div className="self-center">
+                  <button
+                    style={{ all: "revert" }}
+                    onClick={() => void setHideWelcome(true)}
+                  >
+                    Start
+                  </button>
+                </div>
+              </Requester>
+            )}
+            {newStateLink && !hideLink && (
+              <Requester
+                className="items-center"
+                onClose={() => void setHideLink(true)}
+              >
+                <p className="text-center">
+                  Send the following link to your opponent
+                </p>
+                <div className="flex flex-row gap-1">
+                  <input
+                    ref={linkInputRef}
+                    style={{ all: "revert" }}
+                    type="text"
+                    value={newStateLink}
+                    readOnly
+                    onFocus={(ev) => void ev.target.select()}
+                  />
+                  <button
+                    style={{ all: "revert" }}
+                    onClick={() => {
+                      window.navigator.clipboard.writeText(newStateLink);
+                    }}
+                  >
+                    Copy to clipboard
+                  </button>
+                </div>
+              </Requester>
+            )}
           </div>
           <div className="flex flex-col h-full justify-center items-center w-6 text-slate-500 font-bold">
             {Array(8)
@@ -420,55 +476,6 @@ export default function Home() {
             .map((piece, i) => (
               <RawPiece key={i} className="" piece={piece} />
             ))}
-        </div>
-      </div>
-
-      {/* <div className="flex flex-row gap-4">
-        <p>{blacksMove ? "Black" : "White"} player</p>
-        <p>Your move</p>
-
-        <div className="outline-1 outline outline-black w-24 text-center">
-          {Array.isArray(move)
-            ? `${PIECES.get(board[move[1]])} ${posString(
-                move[0]
-              )} to ${posString(move[1])}`
-            : " "}
-        </div>
-
-        <button
-          style={{ all: "revert" }}
-          disabled={move === null}
-          onClick={() => void setMove(null)}
-        >
-          Undo
-        </button>
-      </div> */}
-      <div
-        className={twCascade(
-          "flex flex-col gap-2 items-center bg-slate-200 rounded-lg py-4 px-8",
-          {
-            "opacity-0": move === null || check,
-          }
-        )}
-      >
-        <p className="text-center">Send the following link to your opponent</p>
-        <div className="flex flex-row gap-1">
-          <input
-            ref={linkInputRef}
-            style={{ all: "revert" }}
-            type="text"
-            value={newStateLink}
-            readOnly
-            onFocus={(ev) => void ev.target.select()}
-          />
-          <button
-            style={{ all: "revert" }}
-            onClick={() => {
-              window.navigator.clipboard.writeText(newStateLink);
-            }}
-          >
-            Copy to clipboard
-          </button>
         </div>
       </div>
     </div>
@@ -772,4 +779,37 @@ function getPossibleMoves(board: number[], i: number | null): number[] {
           (piece >= BLACK && board[r * 8 + c] < BLACK))
     )
     .map(([r, c]) => r * 8 + c);
+}
+
+function Requester({
+  className,
+  onClose,
+  ...props
+}: {
+  className?: string;
+  onClose?: () => void;
+}) {
+  return (
+    <div
+      className={twCascade(
+        "absolute inset-0 bg-black bg-opacity-50",
+        "flex flex-col items-center justify-center"
+      )}
+    >
+      <div
+        className={twCascade(
+          "relative rounded-md bg-slate-100 text-black w-10/12 p-6",
+          "flex flex-col gap-4 items-start",
+          className
+        )}
+      >
+        {props.children}
+        {onClose && (
+          <button className="absolute top-1 right-2" onClick={onClose}>
+            🗙
+          </button>
+        )}
+      </div>
+    </div>
+  );
 }
