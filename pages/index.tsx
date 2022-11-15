@@ -46,42 +46,64 @@ export default function Home() {
   const {
     board,
     check,
+    mate,
     lostPieces,
-  }: { board: number[]; lostPieces: number[] } = useMemo(() => {
-    const board = [...initialBoard];
-    const lostPieces = [];
+  }: { board: number[]; lostPieces: number[]; check: boolean; mate: boolean } =
+    useMemo(() => {
+      const board = [...initialBoard];
+      const lostPieces = [];
 
-    let lastPos: number | null = null;
+      let lastPos: number | null = null;
 
-    for (const [from, to] of history) {
-      if (board[to]) {
-        lostPieces.push(board[to]);
+      for (const [from, to] of history) {
+        if (board[to]) {
+          lostPieces.push(board[to]);
+        }
+        board[to] = board[from];
+        board[from] = 0;
+
+        lastPos = to;
       }
-      board[to] = board[from];
-      board[from] = 0;
 
-      lastPos = to;
-    }
+      if (Array.isArray(move)) {
+        const [from, to] = move;
+        if (board[to]) {
+          lostPieces.push(board[to]);
+        }
+        board[to] = board[from];
+        board[from] = 0;
 
-    if (Array.isArray(move)) {
-      const [from, to] = move;
-      if (board[to]) {
-        lostPieces.push(board[to]);
+        lastPos = to;
       }
-      board[to] = board[from];
-      board[from] = 0;
 
-      lastPos = to;
-    }
+      const check =
+        lastPos !== null &&
+        getPossibleMoves(board, lastPos)
+          .map((i) => board[i])
+          .includes(board[lastPos] >= BLACK ? WHITE + KING : BLACK + KING);
 
-    const check =
-      lastPos !== null &&
-      getPossibleMoves(board, lastPos)
-        .map((i) => board[i])
-        .includes(board[lastPos] >= BLACK ? WHITE + KING : BLACK + KING);
+      let mate = false;
+      if (check) {
+        const checkedPlayerPositions = board
+          .map((_, pos) => pos)
+          .filter((pos) =>
+            lastPos !== null && board[lastPos] >= BLACK
+              ? board[pos] < BLACK
+              : board[pos] >= BLACK
+          );
 
-    return { board, lostPieces, check };
-  }, [FEN, history, move]);
+        mate = true;
+        for (const from of checkedPlayerPositions) {
+          const { possibleMoves } = getMoveRestrictions(board, from);
+          if (possibleMoves.length > 0) {
+            mate = false;
+            break;
+          }
+        }
+      }
+
+      return { board, lostPieces, check, mate };
+    }, [FEN, history, move]);
 
   const blacksMove = history.length % 2 != 0;
 
@@ -137,9 +159,13 @@ export default function Home() {
     }
   }, [move]);
 
-  const possibleMoves = useMemo<number[]>(() => {
-    return getPossibleMoves(board, cursorPos);
-  }, [board, cursorPos]);
+  // http://localhost:3000/?state=zjKS0sMU5oDn
+  const { possibleMoves, forbiddenMoves } = useMemo(
+    () => getMoveRestrictions(board, cursorPos),
+    [board, cursorPos]
+  );
+
+  useEffect(() => void console.log({ forbiddenMoves }), [forbiddenMoves]);
 
   return (
     <div className="w-full min-h-full flex flex-col items-center justify-center gap-4 py-4">
@@ -189,12 +215,29 @@ export default function Home() {
                       ])
                       .map(([row, col, i]) => (
                         <button
+                          disabled={
+                            (cursorPos === null &&
+                              (board[i] === 0 ||
+                                (blacksMove
+                                  ? board[i] < BLACK
+                                  : board[i] >= BLACK))) ||
+                            (cursorPos != null &&
+                              !possibleMoves.includes(i) &&
+                              (blacksMove
+                                ? board[i] < BLACK
+                                : board[i] >= BLACK))
+                          }
                           key={col}
                           className={twCascade("w-16 h-16 relative", {
                             "bg-slate-300":
                               ((row ^ col) & 1) ^ (blacksMove ? 1 : 0),
                             "border-solid border-4 border-slate-600":
-                              cursorPos === i,
+                              cursorPos === i ||
+                              (cursorPos === null &&
+                                move === null &&
+                                history.length > 0 &&
+                                history[history.length - 1].includes(i)) ||
+                              move?.includes(i),
                           })}
                           onClick={(ev) => {
                             if (move === null) {
@@ -209,15 +252,14 @@ export default function Home() {
                               ) {
                                 setCursorPos(i);
                               } else if (cursorPos !== null) {
-                                const allowed = getPossibleMoves(
-                                  board,
-                                  cursorPos
-                                ).includes(i);
-                                if (allowed) {
+                                if (possibleMoves.includes(i)) {
                                   setMove([cursorPos, i]);
                                   setCursorPos(null);
                                 }
                               }
+                            } else if (i === move[0]) {
+                              setMove(null);
+                              setCursorPos(i);
                             }
                           }}
                           onMouseOver={() => void setHoverPos(i)}
@@ -228,6 +270,7 @@ export default function Home() {
                 ))}
             </div>
             {possibleMoves
+              .filter((move) => !forbiddenMoves.includes(move))
               .map((i) => [
                 Math.floor(i / 8) ^ (blacksMove ? 7 : 0),
                 i % 8 ^ (blacksMove ? 7 : 0),
@@ -238,6 +281,20 @@ export default function Home() {
                   className="absolute h-14 w-14 pointer-events-none border-dotted border-4 border-slate-500 rounded-full -translate-x-1/2 -translate-y-1/2"
                   style={{ top: row * 64 + 32, left: col * 64 + 32 }}
                 ></div>
+              ))}
+            {forbiddenMoves
+              .map((i) => [
+                Math.floor(i / 8) ^ (blacksMove ? 7 : 0),
+                i % 8 ^ (blacksMove ? 7 : 0),
+              ])
+              .map(([row, col], i) => (
+                <div
+                  key={i}
+                  className="absolute pointer-events-none -translate-x-1/2 -translate-y-1/2 text-4xl leading-none"
+                  style={{ top: row * 64 + 32, left: col * 64 + 32 }}
+                >
+                  🞬
+                </div>
               ))}
             {board
               .map((piece, i) => ({
@@ -255,7 +312,7 @@ export default function Home() {
                   <Piece piece={piece} />
                 </div>
               ))}
-            <svg
+            {/* <svg
               className="absolute inset-0 pointer-events-none"
               viewBox="0 0 16 16"
               xmlns="http://www.w3.org/2000/svg"
@@ -295,7 +352,7 @@ export default function Home() {
                   />
                 </>
               )}
-            </svg>
+            </svg> */}
             {check && (
               <svg
                 viewBox="0 0 400 100"
@@ -303,15 +360,21 @@ export default function Home() {
                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-32 pointer-events-none"
               >
                 <text
-                  className="text-5xl stroke-black fill-white font-serif font-black"
+                  className={twCascade(
+                    "text-4xl stroke-black fill-white font-serif font-black",
+                    {
+                      "fill-black stroke-white":
+                        history.length % 2 === (move === null ? 0 : 1),
+                    }
+                  )}
                   x="50%"
                   y="50%"
                   textAnchor="middle"
                   dominantBaseline="central"
-                  strokeWidth="4"
+                  strokeWidth="3"
                   paintOrder="stroke"
                 >
-                  CHECK
+                  {mate ? "CHECKMATE" : "CHECK"}
                 </text>
               </svg>
             )}
@@ -352,7 +415,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="flex flex-row gap-4">
+      {/* <div className="flex flex-row gap-4">
         <p>{blacksMove ? "Black" : "White"} player</p>
         <p>Your move</p>
 
@@ -371,7 +434,7 @@ export default function Home() {
         >
           Undo
         </button>
-      </div>
+      </div> */}
       <div
         className={twCascade(
           "flex flex-col gap-2 items-center bg-slate-200 rounded-lg py-4 px-8",
@@ -530,6 +593,44 @@ function rowcol(boardIndex: number, blacksMove: boolean) {
   }
 
   return [row, col];
+}
+
+function getMoveRestrictions(board: number[], from: number | null) {
+  if (from === null || board[from] === 0) {
+    return { forbiddenMoves: [], possibleMoves: [] };
+  }
+
+  const possibleMoves = getPossibleMoves(board, from);
+
+  const isBlack = board[from] >= BLACK;
+
+  const opponentPieces = board
+    .map((piece, pos) => [piece, pos])
+    .filter(
+      ([piece, pos]) => piece && (isBlack ? piece < BLACK : piece >= BLACK)
+    );
+
+  const forbiddenMoves: number[] = [];
+  for (const to of possibleMoves) {
+    const mutatedBoard = [...board];
+    mutatedBoard[to] = mutatedBoard[from];
+    mutatedBoard[from] = 0;
+
+    const ourKingsPos = mutatedBoard.indexOf((isBlack ? BLACK : WHITE) + KING);
+
+    for (const [piece, pos] of opponentPieces) {
+      const opponentMoves = getPossibleMoves(mutatedBoard, pos);
+
+      if (opponentMoves.includes(ourKingsPos)) {
+        forbiddenMoves.push(to);
+      }
+    }
+  }
+
+  return {
+    forbiddenMoves,
+    possibleMoves: possibleMoves.filter((to) => !forbiddenMoves.includes(to)),
+  };
 }
 
 function getPossibleMoves(board: number[], i: number | null): number[] {
