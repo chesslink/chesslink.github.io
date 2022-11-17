@@ -41,6 +41,7 @@ export default function Home() {
 
   const [hideWelcome, setHideWelcome] = useState(false);
   const [hideLink, setHideLink] = useState(false);
+  const [hideOpponentsMove, setHideOpponentsMove] = useState(false);
 
   const [cursorPos, setCursorPos] = useState<number | null>(null);
   const [hoverPos, setHoverPos] = useState<number | null>(null);
@@ -158,12 +159,12 @@ export default function Home() {
 
   const linkInputRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
-    // TODO: use input onChange event instead?
-    if (Array.isArray(move)) {
-      linkInputRef.current?.focus();
-    }
-  }, [move]);
+  // useEffect(() => {
+  //   // TODO: use input onChange event instead?
+  //   if (Array.isArray(move)) {
+  //     linkInputRef.current?.focus();
+  //   }
+  // }, [move]);
 
   // http://localhost:3000/?state=zjKS0sMU5oDn
   const { possibleMoves, forbiddenMoves } = useMemo(
@@ -174,9 +175,9 @@ export default function Home() {
   useEffect(() => void console.log({ forbiddenMoves }), [forbiddenMoves]);
 
   return (
-    <div className="w-full min-h-full flex flex-col items-center justify-center gap-4 md:py-4">
-      <h1 className="text-3xl font-black">
-        chess<span className="text-slate-400">by</span>email
+    <div className="w-full min-h-full flex flex-col items-center justify-center gap-4 md:py-4 font-sans">
+      <h1 className="text-3xl font-black text-black dark:text-slate-300">
+        chess<span className="text-slate-400 dark:text-slate-500">by</span>email
         <span className="text-2xl">.com</span>
       </h1>
       <div className="flex flex-col w-full md:w-auto gap-2">
@@ -261,11 +262,16 @@ export default function Home() {
                                   className={twCascade(
                                     "h-full md:w-16 w-1/8 relative",
                                     {
-                                      "bg-slate-300": ((row + col) & 1) === 1,
+                                      "bg-white dark:bg-slate-300":
+                                        ((row + col) & 1) === 0,
+                                      "bg-slate-300 dark:bg-slate-400":
+                                        ((row + col) & 1) === 1,
                                     }
                                   )}
                                   onClick={(ev) => {
                                     if (move === null) {
+                                      setHideOpponentsMove(true);
+                                      
                                       const p = board[i];
 
                                       if (cursorPos === i) {
@@ -300,7 +306,7 @@ export default function Home() {
                                   {possibleMoves.includes(i) && (
                                     <div
                                       key={i}
-                                      className="absolute h-[87.5%] w-[87.5%] border-dotted border-4 border-slate-500 rounded-full -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2"
+                                      className="absolute h-[87.5%] w-[87.5%] border-dotted border-4 border-slate-500 dark:border-slate-800 rounded-full -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2"
                                     ></div>
                                   )}
                                   {forbiddenMoves.includes(i) && (
@@ -309,14 +315,15 @@ export default function Home() {
                                     </div>
                                   )}
                                   {(cursorPos === i ||
-                                    (cursorPos === null &&
+                                    (!hideOpponentsMove &&
+                                      cursorPos === null &&
                                       move === null &&
                                       history.length > 0 &&
                                       history[history.length - 1].includes(
                                         i
                                       )) ||
                                     move?.includes(i)) && (
-                                    <div className="absolute pointer-events-none inset-0 border-solid md:border-4 border-[3px] border-slate-600"></div>
+                                    <div className="absolute pointer-events-none inset-0 border-solid md:border-4 border-[3px] border-slate-600 dark:border-slate-800"></div>
                                   )}
                                 </button>
                               ))}
@@ -390,17 +397,39 @@ export default function Home() {
                             readOnly
                             onFocus={(ev) => void ev.target.select()}
                           />
-                          <button
-                            style={{ all: "revert" }}
-                            onClick={() => {
-                              window.navigator.clipboard.writeText(
-                                newStateLink
-                              );
-                            }}
-                          >
-                            Copy to clipboard
-                          </button>
                         </div>
+                        {typeof window !== "undefined" && window.navigator && (
+                          <div className="flex flex-row gap-4">
+                            {window.navigator.clipboard && (
+                              <button
+                                style={{ all: "revert" }}
+                                onClick={() =>
+                                  void window.navigator.clipboard.writeText(
+                                    newStateLink
+                                  )
+                                }
+                              >
+                                Copy to clipboard
+                              </button>
+                            )}
+                            {window.navigator.share && (
+                              <button
+                                style={{ all: "revert" }}
+                                onClick={() =>
+                                  void window.navigator
+                                    .share({
+                                      title: "chessbyemail.com",
+                                      url: newStateLink,
+                                    })
+                                    .then(() => {})
+                                    .catch((err) => void console.error(err))
+                                }
+                              >
+                                Share
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </Requester>
                     )}
                   </div>
@@ -446,6 +475,12 @@ export default function Home() {
       <div className="flex flex-row gap-6 text-xs opacity-50">
         <p>Copyright 2022, D. Revelj</p>
         <p>Version {publicRuntimeConfig?.version}</p>
+        <a
+          className="hover:underline"
+          href="https://github.com/chessbyemail/chessbyemail.github.io/issues"
+        >
+          Report an issue
+        </a>
       </div>
     </div>
   );
@@ -473,7 +508,7 @@ function Piece({ className, piece }: { className?: string; piece: number }) {
   return (
     <div
       className={twCascade(
-        "relative md:text-6xl text-5xl w-full h-full",
+        "relative md:text-6xl text-5xl w-full h-full font-serif",
         className
       )}
       title={PIECE_NAMES.get(piece)}
@@ -481,7 +516,7 @@ function Piece({ className, piece }: { className?: string; piece: number }) {
       <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white h-full w-full">
         {(piece >= BLACK ? WHITE_PIECES : BLACK_PIECES).get(piece & 7)}
       </span>
-      <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-full w-full">
+      <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-full w-full text-black">
         {(piece < BLACK ? WHITE_PIECES : BLACK_PIECES).get(piece & 7)}
       </span>
     </div>
