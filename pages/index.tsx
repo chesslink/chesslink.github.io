@@ -6,6 +6,18 @@ import { twCascade } from "@mariusmarais/tailwind-cascade";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import getConfig from "next/config";
+import BlackKing from "../images/Chess_kdt45.svg";
+import BlackQueen from "../images/Chess_qdt45.svg";
+import BlackBishop from "../images/Chess_bdt45.svg";
+import BlackKnight from "../images/Chess_ndt45.svg";
+import BlackRook from "../images/Chess_rdt45.svg";
+import BlackPawn from "../images/Chess_pdt45.svg";
+import WhiteKing from "../images/Chess_klt45.svg";
+import WhiteQueen from "../images/Chess_qlt45.svg";
+import WhiteBishop from "../images/Chess_blt45.svg";
+import WhiteKnight from "../images/Chess_nlt45.svg";
+import WhiteRook from "../images/Chess_rlt45.svg";
+import WhitePawn from "../images/Chess_plt45.svg";
 
 const { publicRuntimeConfig } = getConfig();
 
@@ -175,14 +187,14 @@ export default function Home() {
   useEffect(() => void console.log({ forbiddenMoves }), [forbiddenMoves]);
 
   return (
-    <div className="w-full min-h-full flex flex-col items-center justify-center gap-4 md:py-4 font-sans">
+    <div className="w-full min-h-full flex flex-col items-center justify-center gap-4 md:py-4">
       <h1 className="text-3xl font-black text-black dark:text-slate-300">
         chess<span className="text-slate-400 dark:text-slate-500">by</span>email
         <span className="text-2xl">.com</span>
       </h1>
       <div className="flex flex-col w-full md:w-auto gap-2">
         <AspectBox
-          outerClassName="w-full pb-1/8"
+          outerClassName="w-full pb-1/8 md:pb-16"
           innerClassName="flex flex-row justify-start -space-x-4"
         >
           {lostPieces
@@ -271,7 +283,7 @@ export default function Home() {
                                   onClick={(ev) => {
                                     if (move === null) {
                                       setHideOpponentsMove(true);
-                                      
+
                                       const p = board[i];
 
                                       if (cursorPos === i) {
@@ -338,7 +350,7 @@ export default function Home() {
                       >
                         <text
                           className={twCascade(
-                            "text-4xl stroke-black fill-white font-serif font-black",
+                            "text-4xl stroke-black fill-white font-black font-serif",
                             {
                               "fill-black stroke-white":
                                 history.length % 2 === (move === null ? 0 : 1),
@@ -398,13 +410,13 @@ export default function Home() {
                             onFocus={(ev) => void ev.target.select()}
                           />
                         </div>
-                        {typeof window !== "undefined" && window.navigator && (
+                        {navigator && (
                           <div className="flex flex-row gap-4">
-                            {window.navigator.clipboard && (
+                            {navigator.clipboard && (
                               <button
                                 style={{ all: "revert" }}
                                 onClick={() =>
-                                  void window.navigator.clipboard.writeText(
+                                  void navigator.clipboard.writeText(
                                     newStateLink
                                   )
                                 }
@@ -412,11 +424,11 @@ export default function Home() {
                                 Copy to clipboard
                               </button>
                             )}
-                            {window.navigator.share && (
+                            {navigator.share && (
                               <button
                                 style={{ all: "revert" }}
                                 onClick={() =>
-                                  void window.navigator
+                                  void navigator
                                     .share({
                                       title: "chessbyemail.com",
                                       url: newStateLink,
@@ -462,7 +474,7 @@ export default function Home() {
         </div>
 
         <AspectBox
-          outerClassName="w-full pb-1/8"
+          outerClassName="w-full pb-1/8 md:pb-16"
           innerClassName="flex flex-row justify-start -space-x-4"
         >
           {lostPieces
@@ -472,7 +484,7 @@ export default function Home() {
             ))}
         </AspectBox>
       </div>
-      <div className="flex flex-row gap-6 text-xs opacity-50">
+      <div className="flex flex-row w-full justify-evenly text-xs opacity-50">
         <p>Copyright 2022, D. Revelj</p>
         <p>Version {publicRuntimeConfig?.version}</p>
         <a
@@ -505,28 +517,30 @@ function AspectBox({
 }
 
 function Piece({ className, piece }: { className?: string; piece: number }) {
-  return (
+  return SVG_PIECES.has(piece & 15) ? (
     <div
-      className={twCascade(
-        "relative md:text-6xl text-5xl w-full h-full font-serif",
-        className
-      )}
+      className={twCascade("relative w-full h-full", className)}
       title={PIECE_NAMES.get(piece)}
     >
-      <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white h-full w-full">
-        {(piece >= BLACK ? WHITE_PIECES : BLACK_PIECES).get(piece & 7)}
-      </span>
-      <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-full w-full text-black">
-        {(piece < BLACK ? WHITE_PIECES : BLACK_PIECES).get(piece & 7)}
-      </span>
+      <Image
+        src={SVG_PIECES.get(piece & 15)}
+        alt={PIECE_NAMES.get(piece) || ""}
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-full w-full"
+      />
     </div>
+  ) : (
+    <></>
   );
 }
 
 function RawPiece({ className, piece }: { className: string; piece: number }) {
   return (
-    <div className={twCascade("md:text-6xl text-5xl", className)}>
-      {(piece < BLACK ? WHITE_PIECES : BLACK_PIECES).get(piece & 7)}
+    <div className={twCascade("", className)}>
+      <Image
+        src={SVG_PIECES.get(piece & 15)}
+        alt={PIECE_NAMES.get(piece) || ""}
+        className="h-full"
+      />
     </div>
   );
 }
@@ -579,22 +593,6 @@ const BLACK_PIECES = new Map([
   [ROOK, "♜"],
   [QUEEN, "♛"],
   [KING, "♚"],
-]);
-
-const PIECES = new Map([
-  [0, " "],
-  [WHITE + PAWN, "♙"],
-  [WHITE + KNIGHT, "♘"],
-  [WHITE + BISHOP, "♗"],
-  [WHITE + ROOK, "♖"],
-  [WHITE + QUEEN, "♕"],
-  [WHITE + KING, "♔"],
-  [BLACK + PAWN, "♟"],
-  [BLACK + KNIGHT, "♞"],
-  [BLACK + BISHOP, "♝"],
-  [BLACK + ROOK, "♜"],
-  [BLACK + QUEEN, "♛"],
-  [BLACK + KING, "♚"],
 ]);
 
 const PIECE_NAMES = new Map([
@@ -687,18 +685,18 @@ function getPossibleMoves(board: number[], i: number | null): number[] {
     case PAWN:
       if (board[(row + d) * 8 + col] === 0) {
         moves.push([row + d, col]);
+        if (
+          ((piece < BLACK && row === 6) || (piece >= BLACK && row === 1)) &&
+          board[(row + 2 * d) * 8 + col] === 0
+        ) {
+          moves.push([row + 2 * d, col]);
+        }
       }
       if (board[(row + d) * 8 + col - 1]) {
         moves.push([row + d, col - 1]);
       }
       if (board[(row + d) * 8 + col + 1]) {
         moves.push([row + d, col + 1]);
-      }
-      if (
-        ((piece < BLACK && row === 6) || (piece >= BLACK && row === 1)) &&
-        board[(row + 2 * d) * 8 + col] === 0
-      ) {
-        moves.push([row + 2 * d, col]);
       }
       break;
     case KNIGHT:
@@ -840,3 +838,18 @@ function Requester({
     </div>
   );
 }
+
+const SVG_PIECES = new Map([
+  [WHITE + KING, WhiteKing],
+  [WHITE + QUEEN, WhiteQueen],
+  [WHITE + BISHOP, WhiteBishop],
+  [WHITE + KNIGHT, WhiteKnight],
+  [WHITE + ROOK, WhiteRook],
+  [WHITE + PAWN, WhitePawn],
+  [BLACK + KING, BlackKing],
+  [BLACK + QUEEN, BlackQueen],
+  [BLACK + BISHOP, BlackBishop],
+  [BLACK + KNIGHT, BlackKnight],
+  [BLACK + ROOK, BlackRook],
+  [BLACK + PAWN, BlackPawn],
+]);
