@@ -573,7 +573,7 @@ const WHITE_PIECES = new Map([
 
 const BLACK_PIECES = new Map([
   [0, " "],
-  [PAWN, "♟"],
+  [PAWN, "♟︎"],
   [KNIGHT, "♞"],
   [BISHOP, "♝"],
   [ROOK, "♜"],
