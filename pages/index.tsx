@@ -184,26 +184,20 @@ export default function Home() {
     [board, cursorPos]
   );
 
-  useEffect(() => void console.log({ forbiddenMoves }), [forbiddenMoves]);
-
   return (
     <div className="w-full min-h-full flex flex-col items-center justify-center gap-4 md:py-4">
       <h1 className="text-3xl font-black text-black dark:text-slate-300">
         chess<span className="text-slate-400 dark:text-slate-500">by</span>email
         <span className="text-2xl">.com</span>
       </h1>
-      <div className="flex flex-col w-full md:w-auto gap-2">
-        <AspectBox
-          outerClassName="w-full pb-1/8 md:pb-16"
-          innerClassName="flex flex-row justify-start -space-x-4"
-        >
+      <div className="flex flex-col w-full md:w-auto gap-1">
+        <AspectBox outerClassName="md:px-8 w-full" aspect="6.25%">
           {lostPieces
             .filter((piece) => (blacksMove ? piece < BLACK : piece >= BLACK))
             .map((piece, i) => (
               <RawPiece key={i} className="" piece={piece} />
             ))}
         </AspectBox>
-
         <div className="md:w-auto w-full flex flex-col gap-0">
           <div className="hidden md:flex flex-row w-full justify-center text-slate-500 font-bold">
             {Array(8)
@@ -227,7 +221,7 @@ export default function Home() {
             </div>
 
             <div className="w-full md:w-auto border-slate-300 md:border-8 border-double border-y-8 box-content">
-              <AspectBox outerClassName="md:w-128 w-full pb-full">
+              <AspectBox outerClassName="md:w-128 w-full" aspect="100%">
                 {/* <div className="w-full h-0 pb-[100%] relative md:w-[512px]">
                 <div className="absolute inset-0"> */}
                 <div className="flex flex-row md:h-auto md:w-auto h-full w-full">
@@ -473,10 +467,7 @@ export default function Home() {
           </div>
         </div>
 
-        <AspectBox
-          outerClassName="w-full pb-1/8 md:pb-16"
-          innerClassName="flex flex-row justify-start -space-x-4"
-        >
+        <AspectBox outerClassName="md:px-8 w-full" aspect="6.25%">
           {lostPieces
             .filter((piece) => (blacksMove ? piece >= BLACK : piece < BLACK))
             .map((piece, i) => (
@@ -502,15 +493,19 @@ function AspectBox({
   children,
   innerClassName,
   outerClassName,
+  aspect,
 }: {
   children: any | undefined;
   innerClassName?: string;
   outerClassName?: string;
+  aspect: string;
 }) {
   return (
-    <div className={twCascade("h-0 relative", outerClassName)}>
-      <div className={twCascade("absolute inset-0", innerClassName)}>
-        {children}
+    <div className={twCascade("", outerClassName)}>
+      <div className="h-0 relative w-full" style={{ paddingBottom: aspect }}>
+        <div className={twCascade("absolute inset-0", innerClassName)}>
+          {children}
+        </div>
       </div>
     </div>
   );
@@ -535,13 +530,13 @@ function Piece({ className, piece }: { className?: string; piece: number }) {
 
 function RawPiece({ className, piece }: { className: string; piece: number }) {
   return (
-    <div className={twCascade("", className)}>
+    <AspectBox outerClassName="w-1/16" aspect="100%">
       <Image
         src={SVG_PIECES.get(piece & 15)}
         alt={PIECE_NAMES.get(piece) || ""}
         className="h-full"
       />
-    </div>
+    </AspectBox>
   );
 }
 
