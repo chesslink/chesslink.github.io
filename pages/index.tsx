@@ -204,8 +204,12 @@ export default function Home() {
         chess<span className="text-slate-400 dark:text-slate-500">by</span>email
         <span className="text-2xl">.com</span>
       </h1>
-      <div className="flex flex-col w-full md:w-auto gap-1">
-        <AspectBox outerClassName="md:px-8 w-full" aspect="6.25%">
+      <div className="flex flex-col w-full md:w-auto gap-1 md:gap-0">
+        <AspectBox
+          outerClassName="md:px-8 w-full"
+          aspect="6.25%"
+          innerClassName="flex flex-row"
+        >
           {lostPieces
             .filter((piece) => (blacksMove ? piece < BLACK : piece >= BLACK))
             .map((piece, i) => (
@@ -481,7 +485,11 @@ export default function Home() {
           </div>
         </div>
 
-        <AspectBox outerClassName="md:px-8 w-full" aspect="6.25%">
+        <AspectBox
+          outerClassName="md:px-8 w-full"
+          aspect="6.25%"
+          innerClassName="flex flex-row"
+        >
           {lostPieces
             .filter((piece) => (blacksMove ? piece >= BLACK : piece < BLACK))
             .map((piece, i) => (
@@ -549,6 +557,7 @@ function RawPiece({ className, piece }: { className: string; piece: number }) {
         src={SVG_PIECES.get(piece & 15)}
         alt={PIECE_NAMES.get(piece) || ""}
         className="h-full"
+        title={PIECE_NAMES.get(piece) || ""}
       />
     </AspectBox>
   );
