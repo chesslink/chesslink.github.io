@@ -67,62 +67,76 @@ export default function Home() {
     check,
     mate,
     lostPieces,
-  }: { board: number[]; lostPieces: number[]; check: boolean; mate: boolean } =
-    useMemo(() => {
-      const board = [...initialBoard];
-      const lostPieces = [];
+    castling,
+  }: {
+    board: number[];
+    lostPieces: number[];
+    check: boolean;
+    mate: boolean;
+    castling: {};
+  } = useMemo(() => {
+    const board = [...initialBoard];
+    const lostPieces = [];
+    const castling = { K: true, Q: true, k: true, q: true };
 
-      let lastPos: number | null = null;
+    let lastPos: number | null = null;
 
-      for (const [from, to] of history) {
-        if (board[to]) {
-          lostPieces.push(board[to]);
-        }
-        board[to] = board[from];
-        board[from] = 0;
+    for (const [from, to] of history.concat(move ? [move] : [])) {
+      if (board[to]) {
+        lostPieces.push(board[to]);
+      }
+      board[to] = board[from];
+      board[from] = 0;
 
-        lastPos = to;
+      if (from === 0) {
+        castling.q = false;
+      } else if (from === 4) {
+        castling.q = false;
+        castling.k = false;
+      } else if (from === 7) {
+        castling.k = false;
+      } else if (from === 56) {
+        castling.Q = false;
+      } else if (from === 60) {
+        castling.Q = false;
+        castling.K = false;
+      } else if (from === 63) {
+        castling.K = false;
       }
 
-      if (Array.isArray(move)) {
-        const [from, to] = move;
-        if (board[to]) {
-          lostPieces.push(board[to]);
-        }
-        board[to] = board[from];
-        board[from] = 0;
+      lastPos = to;
+    }
 
-        lastPos = to;
-      }
+    const check =
+      lastPos !== null &&
+      getPossibleMoves(board, lastPos)
+        .map((i) => board[i])
+        .includes(board[lastPos] >= BLACK ? WHITE + KING : BLACK + KING);
 
-      const check =
-        lastPos !== null &&
-        getPossibleMoves(board, lastPos)
-          .map((i) => board[i])
-          .includes(board[lastPos] >= BLACK ? WHITE + KING : BLACK + KING);
+    let mate = false;
+    if (check) {
+      const checkedPlayerPositions = board
+        .map((_, pos) => pos)
+        .filter((pos) =>
+          lastPos !== null && board[lastPos] >= BLACK
+            ? board[pos] < BLACK
+            : board[pos] >= BLACK
+        );
 
-      let mate = false;
-      if (check) {
-        const checkedPlayerPositions = board
-          .map((_, pos) => pos)
-          .filter((pos) =>
-            lastPos !== null && board[lastPos] >= BLACK
-              ? board[pos] < BLACK
-              : board[pos] >= BLACK
-          );
-
-        mate = true;
-        for (const from of checkedPlayerPositions) {
-          const { possibleMoves } = getMoveRestrictions(board, from);
-          if (possibleMoves.length > 0) {
-            mate = false;
-            break;
-          }
+      mate = true;
+      for (const from of checkedPlayerPositions) {
+        const { possibleMoves } = getMoveRestrictions(board, from);
+        if (possibleMoves.length > 0) {
+          mate = false;
+          break;
         }
       }
+    }
 
-      return { board, lostPieces, check, mate };
-    }, [FEN, history, move]);
+    return { board, lostPieces, check, mate, castling };
+  }, [FEN, history, move]);
+
+  useEffect(() => void console.log(castling), [castling]);
 
   const blacksMove = history.length % 2 != 0;
 
