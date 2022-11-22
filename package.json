@@ -1,6 +1,6 @@
 {
   "name": "chess-by-email",
-  "version": "2022.11.21",
+  "version": "2022.11.22",
   "private": true,
   "scripts": {
     "dev": "next dev",
