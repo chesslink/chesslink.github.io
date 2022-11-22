@@ -199,7 +199,7 @@ export default function Home() {
   );
 
   return (
-    <div className="w-full min-h-full flex flex-col items-center justify-center gap-4 md:py-4">
+    <div className="w-full min-h-full flex flex-col items-center justify-center gap-4 md:py-4 max-w-xl mx-auto">
       <h1 className="text-3xl font-black text-black dark:text-slate-300">
         chess<span className="text-slate-400 dark:text-slate-500">by</span>email
         <span className="text-2xl">.com</span>
@@ -497,7 +497,7 @@ export default function Home() {
             ))}
         </AspectBox>
       </div>
-      <div className="flex flex-row w-full justify-evenly text-xs opacity-50">
+      <div className="flex flex-row w-full justify-between text-xs opacity-50 max-w-lg">
         <p>Copyright 2022, D. Revelj</p>
         <p>Version {publicRuntimeConfig?.version}</p>
         <a
