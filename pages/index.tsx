@@ -19,6 +19,8 @@ import WhiteKnight from "../images/Chess_nlt45.svg";
 import WhiteRook from "../images/Chess_rlt45.svg";
 import WhitePawn from "../images/Chess_plt45.svg";
 
+// castling test: http://localhost:3000/?state=2mOe9vFX-tGVxhJZ6oCQ5qBS75DB5pBR
+
 const { publicRuntimeConfig } = getConfig();
 
 const PAWN = 1;
@@ -73,7 +75,7 @@ export default function Home() {
     lostPieces: number[];
     check: boolean;
     mate: boolean;
-    castling: {};
+    castling: { k: boolean; q: boolean; K: boolean; Q: boolean };
   } = useMemo(() => {
     const board = [...initialBoard];
     const lostPieces = [];
@@ -82,6 +84,17 @@ export default function Home() {
     let lastPos: number | null = null;
 
     for (const [from, to] of history.concat(move ? [move] : [])) {
+      if ((board[from] & 7) === KING && (from & 7) === 4) {
+        // castling
+        if ((to & 7) === 1) {
+          board[(to & 0x38) + 2] = board[(to & 0x38) + 0];
+          board[(to & 0x38) + 0] = 0;
+        } else if ((to & 7) === 6) {
+          board[(to & 0x38) + 5] = board[(to & 0x38) + 7];
+          board[(to & 0x38) + 7] = 0;
+        }
+      } 
+
       if (board[to]) {
         lostPieces.push(board[to]);
       }
@@ -109,7 +122,7 @@ export default function Home() {
 
     const check =
       lastPos !== null &&
-      getPossibleMoves(board, lastPos)
+      getPossibleMoves(board, lastPos, castling)
         .map((i) => board[i])
         .includes(board[lastPos] >= BLACK ? WHITE + KING : BLACK + KING);
 
@@ -125,7 +138,7 @@ export default function Home() {
 
       mate = true;
       for (const from of checkedPlayerPositions) {
-        const { possibleMoves } = getMoveRestrictions(board, from);
+        const { possibleMoves } = getMoveRestrictions(board, from, castling);
         if (possibleMoves.length > 0) {
           mate = false;
           break;
@@ -194,8 +207,8 @@ export default function Home() {
 
   // http://localhost:3000/?state=zjKS0sMU5oDn
   const { possibleMoves, forbiddenMoves } = useMemo(
-    () => getMoveRestrictions(board, cursorPos),
-    [board, cursorPos]
+    () => getMoveRestrictions(board, cursorPos, castling),
+    [board, cursorPos, castling]
   );
 
   return (
@@ -651,12 +664,16 @@ function rowcol(boardIndex: number, blacksMove: boolean) {
   return [row, col];
 }
 
-function getMoveRestrictions(board: number[], from: number | null) {
+function getMoveRestrictions(
+  board: number[],
+  from: number | null,
+  castling: { k: boolean; q: boolean; K: boolean; Q: boolean }
+) {
   if (from === null || board[from] === 0) {
     return { forbiddenMoves: [], possibleMoves: [] };
   }
 
-  const possibleMoves = getPossibleMoves(board, from);
+  const possibleMoves = getPossibleMoves(board, from, castling);
 
   const isBlack = board[from] >= BLACK;
 
@@ -675,7 +692,7 @@ function getMoveRestrictions(board: number[], from: number | null) {
     const ourKingsPos = mutatedBoard.indexOf((isBlack ? BLACK : WHITE) + KING);
 
     for (const [piece, pos] of opponentPieces) {
-      const opponentMoves = getPossibleMoves(mutatedBoard, pos);
+      const opponentMoves = getPossibleMoves(mutatedBoard, pos, castling);
 
       if (opponentMoves.includes(ourKingsPos)) {
         forbiddenMoves.push(to);
@@ -689,7 +706,11 @@ function getMoveRestrictions(board: number[], from: number | null) {
   };
 }
 
-function getPossibleMoves(board: number[], i: number | null): number[] {
+function getPossibleMoves(
+  board: number[],
+  i: number | null,
+  castling: { k: boolean; q: boolean; K: boolean; Q: boolean }
+): number[] {
   if (i === null) {
     return [];
   }
@@ -805,6 +826,22 @@ function getPossibleMoves(board: number[], i: number | null): number[] {
           [1, 1],
         ].map(([dr, dc]) => [row + dr, col + dc])
       );
+      if (piece >= BLACK) {
+        if (castling.k === true) {
+          moves.push([0, 6]);
+        }
+        if (castling.q === true) {
+          moves.push([0, 1]);
+        }
+      } else {
+        if (castling.K === true) {
+          moves.push([7, 6]);
+        }
+        if (castling.Q === true) {
+          moves.push([7, 1]);
+        }
+      }
+
       break;
   }
 
