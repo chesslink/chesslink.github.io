@@ -1,4 +1,3 @@
-* unicode 🞬 funkar inte på ios
 * skriv check/checkmate i länk-popupen
 * implementera En passant
 * kopiera länk automatiskt efter drag

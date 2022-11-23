@@ -159,8 +159,6 @@ export default function Home() {
     return { board, lostPieces, check, mate, castling };
   }, [FEN, history, move]);
 
-  useEffect(() => void console.log(castling), [castling]);
-
   const blacksMove = history.length % 2 != 0;
 
   const newStateLink = useMemo(() => {
@@ -357,8 +355,12 @@ export default function Home() {
                                     ></div>
                                   )}
                                   {forbiddenMoves.includes(i) && (
-                                    <div className="absolute pointer-events-none -translate-x-1/2 -translate-y-1/2 text-4xl leading-none top-1/2 left-1/2">
-                                      🞬
+                                    <div
+                                      className="w-full h-full relative"
+                                      title="This move would leave your king in check."
+                                    >
+                                      <div className="absolute top-1/2 w-full h-0 border-dotted border-slate-500 dark:border-slate-800 border-t-4 -rotate-45" />
+                                      <div className="absolute top-1/2 w-full h-0 border-dotted border-slate-500 dark:border-slate-800 border-t-4 rotate-45" />
                                     </div>
                                   )}
                                   {(cursorPos === i ||
@@ -895,8 +897,13 @@ function Requester({
       >
         {children}
         {onClose && (
-          <button className="absolute top-1 right-2" onClick={onClose}>
-            🗙
+          <button
+            className="absolute top-2 right-2 h-3 w-3"
+            onClick={onClose}
+            title="Close"
+          >
+            <div className="absolute top-1/2 w-full h-0 border-black border-t-2 -rotate-45" />
+            <div className="absolute top-1/2 w-full h-0 border-black border-t-2 rotate-45" />
           </button>
         )}
       </div>
