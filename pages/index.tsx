@@ -20,6 +20,7 @@ import WhiteRook from "../images/Chess_rlt45.svg";
 import WhitePawn from "../images/Chess_plt45.svg";
 
 // castling test: http://localhost:3000/?state=2mOe9vFX-tGVxhJZ6oCQ5qBS75DB5pBR
+// promotion test: http://localhost:3000/?state=2mOe3nenmeGVeWnvWOv3
 
 const { publicRuntimeConfig } = getConfig();
 
@@ -93,13 +94,22 @@ export default function Home() {
           board[(to & 0x38) + 5] = board[(to & 0x38) + 7];
           board[(to & 0x38) + 7] = 0;
         }
-      } 
+      }
 
       if (board[to]) {
         lostPieces.push(board[to]);
       }
       board[to] = board[from];
       board[from] = 0;
+
+      // Promotion to queen
+      if ((board[to] & 7) === PAWN) {
+        if (to < 8) {
+          board[to] = WHITE + QUEEN;
+        } else if (to >= 56) {
+          board[to] = BLACK + QUEEN;
+        }
+      }
 
       if (from === 0) {
         castling.q = false;
