@@ -21,6 +21,7 @@ import WhitePawn from "../images/Chess_plt45.svg";
 
 // castling test: http://localhost:3000/?state=2mOe9vFX-tGVxhJZ6oCQ5qBS75DB5pBR
 // promotion test: http://localhost:3000/?state=2mOe3nenmeGVeWnvWOv3
+// checkmate test: http://localhost:3000/?state=1tMU2m
 
 const { publicRuntimeConfig } = getConfig();
 
@@ -218,6 +219,19 @@ export default function Home() {
     () => getMoveRestrictions(board, cursorPos, castling),
     [board, cursorPos, castling]
   );
+
+  // const copiedLink = useMemo(() => {
+  //   if (
+  //     newStateLink !== null &&
+  //     typeof window !== "undefined" &&
+  //     window.navigator
+  //   ) {
+  //     window.navigator.clipboard.writeText(newStateLink);
+  //     return newStateLink;
+  //   } else {
+  //     return "";
+  //   }
+  // }, [newStateLink]);
 
   return (
     <div className="w-full min-h-full flex flex-col items-center justify-between gap-4 md:py-4 max-w-xl mx-auto">
@@ -436,6 +450,11 @@ export default function Home() {
                         className="items-center"
                         onClose={() => void setHideLink(true)}
                       >
+                        {check && (
+                          <h1 className="text-lg font-bold">
+                            {mate ? "Checkmate!" : "Check!"}
+                          </h1>
+                        )}
                         <p className="text-center">
                           Send the following link to your opponent
                         </p>
