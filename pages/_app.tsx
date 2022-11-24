@@ -12,8 +12,12 @@ export default function App({ Component, pageProps }: AppProps) {
         <title>ChessByEmail.com</title>
         <meta
           name="description"
-          content="Play correspondence chess without registration"
+          content="Online correspondence chess - free and without registration"
           key="desc"
+        />
+        <meta
+          property="og:image"
+          content="https://www.chessbyemail.com/vd-photography-Bwt5M8z1kXg-unsplash.jpg"
         />
       </Head>
       <Script
