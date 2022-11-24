@@ -1,12 +1,21 @@
 import "../styles/globals.css";
 import type { AppProps } from "next/app";
 import Script from "next/script";
+import Head from "next/head";
 
 export default function App({ Component, pageProps }: AppProps) {
   const measurementId = "G-0THG02423M";
 
   return (
     <>
+      <Head>
+        <title>ChessByEmail.com</title>
+        <meta
+          name="description"
+          content="Play correspondence chess without registration"
+          key="desc"
+        />
+      </Head>
       <Script
         strategy="afterInteractive"
         src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`}
