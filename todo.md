@@ -1,3 +1,5 @@
+* rockad kollar inte att det är tomt på alla platser mellan kung och torn
+* lägg till checksumma i länkarna
 * Släng inte upp länk-popup direkt. Visa knapp under brädet i stället?
 * uppdatera readme
 * lägg till licens
