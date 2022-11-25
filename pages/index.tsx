@@ -22,6 +22,7 @@ import WhitePawn from "../images/Chess_plt45.svg";
 // castling test: http://localhost:3000/?state=2mOe9vFX-tGVxhJZ6oCQ5qBS75DB5pBR
 // promotion test: http://localhost:3000/?state=2mOe3nenmeGVeWnvWOv3
 // checkmate test: http://localhost:3000/?state=1tMU2m
+// en passant test: http://localhost:3000/?state=0kOekcLb
 
 const { publicRuntimeConfig } = getConfig();
 
@@ -72,16 +73,19 @@ export default function Home() {
     mate,
     lostPieces,
     castling,
+    enPassant,
   }: {
     board: number[];
     lostPieces: number[];
     check: boolean;
     mate: boolean;
     castling: { k: boolean; q: boolean; K: boolean; Q: boolean };
+    enPassant: number | null;
   } = useMemo(() => {
     const board = [...initialBoard];
     const lostPieces = [];
     const castling = { K: true, Q: true, k: true, q: true };
+    let enPassant: number | null = null;
 
     let lastPos: number | null = null;
 
@@ -99,12 +103,24 @@ export default function Home() {
 
       if (board[to]) {
         lostPieces.push(board[to]);
+      } else if (to === enPassant && (board[from] & 7) === PAWN) {
+        // Captue en passant
+        const d = (to & 7) - (from & 7);
+        lostPieces.push(board[from + d]);
+        board[from + d] = 0;
       }
+
       board[to] = board[from];
       board[from] = 0;
 
-      // Promotion to queen
+      enPassant = null;
       if ((board[to] & 7) === PAWN) {
+        // Set en passant flag
+        if (Math.abs(to - from) === 16) {
+          enPassant = (from + to) / 2;
+        }
+
+        // Promotion to queen
         if (to < 8) {
           board[to] = WHITE + QUEEN;
         } else if (to >= 56) {
@@ -133,7 +149,7 @@ export default function Home() {
 
     const check =
       lastPos !== null &&
-      getPossibleMoves(board, lastPos, castling)
+      getPossibleMoves(board, lastPos, castling, enPassant)
         .map((i) => board[i])
         .includes(board[lastPos] >= BLACK ? WHITE + KING : BLACK + KING);
 
@@ -149,7 +165,12 @@ export default function Home() {
 
       mate = true;
       for (const from of checkedPlayerPositions) {
-        const { possibleMoves } = getMoveRestrictions(board, from, castling);
+        const { possibleMoves } = getMoveRestrictions(
+          board,
+          from,
+          castling,
+          enPassant
+        );
         if (possibleMoves.length > 0) {
           mate = false;
           break;
@@ -157,7 +178,7 @@ export default function Home() {
       }
     }
 
-    return { board, lostPieces, check, mate, castling };
+    return { board, lostPieces, check, mate, castling, enPassant };
   }, [FEN, history, move]);
 
   const blacksMove = history.length % 2 != 0;
@@ -216,8 +237,8 @@ export default function Home() {
 
   // http://localhost:3000/?state=zjKS0sMU5oDn
   const { possibleMoves, forbiddenMoves } = useMemo(
-    () => getMoveRestrictions(board, cursorPos, castling),
-    [board, cursorPos, castling]
+    () => getMoveRestrictions(board, cursorPos, castling, enPassant),
+    [board, cursorPos, castling, enPassant]
   );
 
   // const copiedLink = useMemo(() => {
@@ -700,13 +721,14 @@ function rowcol(boardIndex: number, blacksMove: boolean) {
 function getMoveRestrictions(
   board: number[],
   from: number | null,
-  castling: { k: boolean; q: boolean; K: boolean; Q: boolean }
+  castling: { k: boolean; q: boolean; K: boolean; Q: boolean },
+  enPassant: number | null
 ) {
   if (from === null || board[from] === 0) {
     return { forbiddenMoves: [], possibleMoves: [] };
   }
 
-  const possibleMoves = getPossibleMoves(board, from, castling);
+  const possibleMoves = getPossibleMoves(board, from, castling, enPassant);
 
   const isBlack = board[from] >= BLACK;
 
@@ -725,7 +747,12 @@ function getMoveRestrictions(
     const ourKingsPos = mutatedBoard.indexOf((isBlack ? BLACK : WHITE) + KING);
 
     for (const [piece, pos] of opponentPieces) {
-      const opponentMoves = getPossibleMoves(mutatedBoard, pos, castling);
+      const opponentMoves = getPossibleMoves(
+        mutatedBoard,
+        pos,
+        castling,
+        enPassant
+      );
 
       if (opponentMoves.includes(ourKingsPos)) {
         forbiddenMoves.push(to);
@@ -742,7 +769,8 @@ function getMoveRestrictions(
 function getPossibleMoves(
   board: number[],
   i: number | null,
-  castling: { k: boolean; q: boolean; K: boolean; Q: boolean }
+  castling: { k: boolean; q: boolean; K: boolean; Q: boolean },
+  enPassant: number | null
 ): number[] {
   if (i === null) {
     return [];
@@ -764,10 +792,18 @@ function getPossibleMoves(
           moves.push([row + 2 * d, col]);
         }
       }
-      if (board[(row + d) * 8 + col - 1]) {
+      if (
+        board[(row + d) * 8 + col - 1] ||
+        (enPassant === (row + d) * 8 + col - 1 &&
+          (board[i] ^ board[row * 8 + col - 1]) === 8)
+      ) {
         moves.push([row + d, col - 1]);
       }
-      if (board[(row + d) * 8 + col + 1]) {
+      if (
+        board[(row + d) * 8 + col + 1] ||
+        (enPassant === (row + d) * 8 + col + 1 &&
+          (board[i] ^ board[row * 8 + col + 1]) === 8)
+      ) {
         moves.push([row + d, col + 1]);
       }
       break;
@@ -946,3 +982,12 @@ const SVG_PIECES = new Map([
   [BLACK + ROOK, BlackRook],
   [BLACK + PAWN, BlackPawn],
 ]);
+
+function mutateBoard(
+  board: number[],
+  move: number[] | null,
+  castling: { k: boolean; q: boolean; K: boolean; Q: boolean },
+  enPassant: number | null
+) {
+  return { board, castling, enPassant };
+}
