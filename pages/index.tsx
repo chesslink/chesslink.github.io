@@ -280,13 +280,12 @@ export default function Home() {
                                   )}
                                   {possibleMoves.includes(i) && (
                                     <div
-                                      key={i}
                                       className="absolute h-[87.5%] w-[87.5%] border-dotted border-4 border-slate-500 dark:border-slate-800 rounded-full -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2"
                                     ></div>
                                   )}
                                   {forbiddenMoves.includes(i) && (
                                     <div
-                                      className="w-full h-full relative"
+                                      className="absolute inset-0"
                                       title="This move would leave your king in check."
                                     >
                                       <div className="absolute top-1/2 w-full h-0 border-dotted border-slate-500 dark:border-slate-800 border-t-4 -rotate-45" />
