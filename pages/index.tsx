@@ -76,21 +76,7 @@ export default function Home() {
 
   const [move, setMove] = useState<number[] | null>(null);
 
-  const {
-    board,
-    check,
-    mate,
-    lostPieces,
-    castling,
-    enPassant,
-  }: {
-    board: number[];
-    lostPieces?: number[];
-    check?: boolean;
-    mate?: boolean;
-    castling: { k: boolean; q: boolean; K: boolean; Q: boolean };
-    enPassant: number | null;
-  } = useMemo(() => {
+  const state: State = useMemo(() => {
     const state: State = {
       board: [...initialBoard],
       lostPieces: [],
@@ -127,34 +113,7 @@ export default function Home() {
     return `${
       typeof window !== "undefined" ? window.location.origin : ""
     }/?state=${newEncodedHistory}`;
-  }, [history, move, check]);
-
-  const { x0, y0, dx, dy } = useMemo(() => {
-    if (Array.isArray(move)) {
-      const from = rowcol(move[0], blacksMove);
-      const to = rowcol(move[1], blacksMove);
-
-      const x0 = 1 + 2 * from[1];
-      const y0 = 1 + 2 * from[0];
-
-      const x1 = 1 + 2 * to[1];
-      const y1 = 1 + 2 * to[0];
-
-      const dx = x1 - x0;
-      const dy = y1 - y0;
-
-      const norm = Math.sqrt(dx * dx + dy * dy);
-
-      const ndx = dx / norm;
-      const ndy = dy / norm;
-
-      return { x0, y0, dx: ndx * (norm - 0.71), dy: ndy * (norm - 0.71) };
-    } else {
-      return {};
-    }
-  }, [move]);
-
-  const [showLink, setShowLink] = useState(false);
+  }, [history, move]);
 
   const linkInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -167,8 +126,8 @@ export default function Home() {
 
   // http://localhost:3000/?state=zjKS0sMU5oDn
   const { possibleMoves, forbiddenMoves } = useMemo(
-    () => getMoveRestrictions({ board, castling, enPassant }, cursorPos),
-    [board, cursorPos, castling, enPassant]
+    () => getMoveRestrictions(state, cursorPos),
+    [state, cursorPos]
   );
 
   // const copiedLink = useMemo(() => {
@@ -193,13 +152,13 @@ export default function Home() {
         <span className="text-2xl">.com</span>
       </h1>
       <div className="flex flex-col w-full md:w-auto gap-1 md:gap-0">
-        {lostPieces && (
+        {state.lostPieces && (
           <AspectBox
             outerClassName="md:px-8 w-full"
             aspect="6.25%"
             innerClassName="flex flex-row"
           >
-            {lostPieces
+            {state.lostPieces
               .filter((piece) => (blacksMove ? piece < BLACK : piece >= BLACK))
               .map((piece, i) => (
                 <RawPiece key={i} className="" piece={piece} />
@@ -255,18 +214,18 @@ export default function Home() {
                                     !(
                                       (cursorPos === null &&
                                         move === null &&
-                                        board[i] !== 0 &&
+                                        state.board[i] !== 0 &&
                                         (blacksMove
-                                          ? board[i] >= BLACK
-                                          : board[i] < BLACK)) ||
+                                          ? state.board[i] >= BLACK
+                                          : state.board[i] < BLACK)) ||
                                       (cursorPos !== null &&
                                         move === null &&
                                         possibleMoves.includes(i)) ||
                                       (cursorPos !== null &&
-                                        board[i] !== 0 &&
+                                        state.board[i] !== 0 &&
                                         (blacksMove
-                                          ? board[i] >= BLACK
-                                          : board[i] < BLACK)) ||
+                                          ? state.board[i] >= BLACK
+                                          : state.board[i] < BLACK)) ||
                                       (cursorPos === null &&
                                         move !== null &&
                                         i === move[0])
@@ -286,7 +245,7 @@ export default function Home() {
                                     if (move === null) {
                                       setHideOpponentsMove(true);
 
-                                      const p = board[i];
+                                      const p = state.board[i];
 
                                       if (cursorPos === i) {
                                         setCursorPos(null);
@@ -311,10 +270,10 @@ export default function Home() {
                                   onMouseOver={() => void setHoverPos(i)}
                                   onMouseOut={() => void setHoverPos(null)}
                                 >
-                                  {board[i] !== 0 && (
+                                  {state.board[i] !== 0 && (
                                     <Piece
                                       className="h-full w-full"
-                                      piece={board[i]}
+                                      piece={state.board[i]}
                                     />
                                   )}
                                   {possibleMoves.includes(i) && (
@@ -348,7 +307,7 @@ export default function Home() {
                           </div>
                         ))}
                     </div>
-                    {check && (
+                    {state.check && (
                       <svg
                         viewBox="0 0 400 100"
                         xmlns="http://www.w3.org/2000/svg"
@@ -369,7 +328,7 @@ export default function Home() {
                           strokeWidth="3"
                           paintOrder="stroke"
                         >
-                          {mate ? "CHECKMATE" : "CHECK"}
+                          {state.mate ? "CHECKMATE" : "CHECK"}
                         </text>
                       </svg>
                     )}
@@ -403,9 +362,9 @@ export default function Home() {
                         className="items-center"
                         onClose={() => void setHideLink(true)}
                       >
-                        {check && (
+                        {state.check && (
                           <h1 className="text-lg font-bold">
-                            {mate ? "Checkmate!" : "Check!"}
+                            {state.mate ? "Checkmate!" : "Check!"}
                           </h1>
                         )}
                         <p className="text-center">
@@ -484,13 +443,13 @@ export default function Home() {
           </div>
         </div>
 
-        {lostPieces && (
+        {state.lostPieces && (
           <AspectBox
             outerClassName="md:px-8 w-full"
             aspect="6.25%"
             innerClassName="flex flex-row"
           >
-            {lostPieces
+            {state.lostPieces
               .filter((piece) => (blacksMove ? piece >= BLACK : piece < BLACK))
               .map((piece, i) => (
                 <RawPiece key={i} className="" piece={piece} />
@@ -697,16 +656,16 @@ function getMoveRestrictions(state: State, from: number | null) {
   };
 }
 
-function getPossibleMoves(state: State, i: number | null): number[] {
-  if (i === null) {
+function getPossibleMoves(state: State, from: number | null): number[] {
+  if (from === null) {
     return [];
   }
 
   const { board, castling, enPassant } = state;
 
   const moves = [];
-  const [row, col] = [Math.floor(i / 8), i % 8];
-  const piece = board[i];
+  const [row, col] = [Math.floor(from / 8), from % 8];
+  const piece = board[from];
   const d = piece >= BLACK ? 1 : -1;
 
   switch (piece & 7) {
@@ -723,14 +682,14 @@ function getPossibleMoves(state: State, i: number | null): number[] {
       if (
         board[(row + d) * 8 + col - 1] ||
         (enPassant === (row + d) * 8 + col - 1 &&
-          (board[i] ^ board[row * 8 + col - 1]) === 8)
+          (board[from] ^ board[row * 8 + col - 1]) === 8)
       ) {
         moves.push([row + d, col - 1]);
       }
       if (
         board[(row + d) * 8 + col + 1] ||
         (enPassant === (row + d) * 8 + col + 1 &&
-          (board[i] ^ board[row * 8 + col + 1]) === 8)
+          (board[from] ^ board[row * 8 + col + 1]) === 8)
       ) {
         moves.push([row + d, col + 1]);
       }
