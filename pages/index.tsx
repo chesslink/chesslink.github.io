@@ -703,10 +703,10 @@ function getPossibleMoves(state: State, from: number | null): number[] {
           [-2, 1],
           [2, -1],
           [2, 1],
-          [-1, 2],
-          [1, 2],
           [-1, -2],
           [-1, 2],
+          [1, -2],
+          [1, 2],
         ].map(([dr, dc]) => [row + dr, col + dc])
       );
       break;
