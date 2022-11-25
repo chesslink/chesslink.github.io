@@ -1,4 +1,7 @@
 /** @type {import('tailwindcss').Config} */
+
+const colors = require('tailwindcss/colors')
+
 module.exports = {
   content: [
     "./app/**/*.{js,ts,jsx,tsx}",
@@ -23,6 +26,15 @@ module.exports = {
         "128": "512px",
       }
     },
+    screens: {
+      md: "576px",
+    },
+    colors: {
+      ...colors,
+      "board-light": "#e2fadb",
+      "board-dark": "#9bc4cb",
+      "board-darker": "#5f634f",
+    }
   },
   plugins: [],
 }

@@ -6,3 +6,5 @@
 * favicon
 * namnge parti
 * kopiera länk automatiskt efter drag
+
+* vit häst svart dam saknar kryss? http://localhost:3001/?state=0kLbkbDbzrMc5qFh

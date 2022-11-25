@@ -143,11 +143,13 @@ export default function Home() {
   //   }
   // }, [newStateLink]);
 
+  // https://coolors.co/5f634f-9bc4cb-cfebdf-e2fadb-dbefbc
+
   return (
     <div className="w-full min-h-full flex flex-col items-center justify-between gap-4 md:py-4 max-w-xl mx-auto">
       <div></div>
       <h1 className="text-3xl font-black text-black dark:text-slate-300">
-        chess<span className="text-slate-400 dark:text-slate-500">by</span>
+        chess<span className="text-board-dark dark:text-slate-500">by</span>
         email
         <span className="text-2xl">.com</span>
       </h1>
@@ -166,7 +168,7 @@ export default function Home() {
           </AspectBox>
         )}
         <div className="md:w-auto w-full flex flex-col gap-0">
-          <div className="hidden md:flex flex-row w-full justify-center text-slate-500 font-bold">
+          <div className="hidden md:flex flex-row w-full justify-center text-board-darker font-bold">
             {Array(8)
               .fill(0)
               .map((_, i) => (
@@ -177,7 +179,7 @@ export default function Home() {
           </div>
 
           <div className="md:w-auto w-full flex flex-row gap-0">
-            <div className="md:flex hidden flex-col h-full justify-center items-center w-6 text-slate-500 font-bold py-2">
+            <div className="md:flex hidden flex-col h-full justify-center items-center w-6 text-board-darker font-bold py-2">
               {Array(8)
                 .fill(0)
                 .map((_, i) => (
@@ -187,7 +189,7 @@ export default function Home() {
                 ))}
             </div>
 
-            <div className="w-full md:w-auto border-slate-300 md:border-8 border-double border-y-8 box-content">
+            <div className="w-full md:w-auto border-board-dark md:border-8 border-double border-y-8 box-content">
               <AspectBox outerClassName="md:w-128 w-full" aspect="100%">
                 {/* <div className="w-full h-0 pb-[100%] relative md:w-[512px]">
                 <div className="absolute inset-0"> */}
@@ -235,9 +237,9 @@ export default function Home() {
                                   className={twCascade(
                                     "h-full md:w-16 w-1/8 relative",
                                     {
-                                      "bg-white dark:bg-slate-300":
+                                      "bg-board-light dark:bg-slate-300":
                                         ((row + col) & 1) === 0,
-                                      "bg-slate-300 dark:bg-slate-400":
+                                      "bg-board-dark dark:bg-slate-400":
                                         ((row + col) & 1) === 1,
                                     }
                                   )}
@@ -421,7 +423,7 @@ export default function Home() {
               </AspectBox>
             </div>
 
-            <div className="hidden md:flex flex-col h-full justify-center items-center w-6 text-slate-500 font-bold py-2">
+            <div className="hidden md:flex flex-col h-full justify-center items-center w-6 text-board-darker font-bold py-2">
               {Array(8)
                 .fill(0)
                 .map((_, i) => (
@@ -432,7 +434,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="hidden md:flex flex-row w-full justify-center text-slate-500 font-bold">
+          <div className="hidden md:flex flex-row w-full justify-center text-board-darker font-bold">
             {Array(8)
               .fill(0)
               .map((_, i) => (
@@ -457,7 +459,7 @@ export default function Home() {
           </AspectBox>
         )}
       </div>
-      <div className="flex flex-row w-full justify-between text-xs opacity-50 max-w-[528px] md:px-0 px-1">
+      <div className="flex flex-row w-full justify-between text-xs text-gray-500 max-w-[528px] md:px-0 px-1">
         <p>Copyright 2022, D. Revelj</p>
         <p>Version {publicRuntimeConfig?.version}</p>
         <a
