@@ -40,6 +40,15 @@ const FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 const BASE64 =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
+interface State {
+  board: number[];
+  castling: { k: boolean; q: boolean; K: boolean; Q: boolean };
+  enPassant: number | null;
+  lostPieces?: number[];
+  check?: boolean;
+  mate?: boolean;
+}
+
 export default function Home() {
   const router = useRouter();
   const { state: inputHistory } = router.query;
@@ -76,109 +85,30 @@ export default function Home() {
     enPassant,
   }: {
     board: number[];
-    lostPieces: number[];
-    check: boolean;
-    mate: boolean;
+    lostPieces?: number[];
+    check?: boolean;
+    mate?: boolean;
     castling: { k: boolean; q: boolean; K: boolean; Q: boolean };
     enPassant: number | null;
   } = useMemo(() => {
-    const board = [...initialBoard];
-    const lostPieces = [];
-    const castling = { K: true, Q: true, k: true, q: true };
-    let enPassant: number | null = null;
+    const state: State = {
+      board: [...initialBoard],
+      lostPieces: [],
+      castling: { K: true, Q: true, k: true, q: true },
+      enPassant: null,
+    };
 
-    let lastPos: number | null = null;
-
-    for (const [from, to] of history.concat(move ? [move] : [])) {
-      if ((board[from] & 7) === KING && (from & 7) === 4) {
-        // castling
-        if ((to & 7) === 1) {
-          board[(to & 0x38) + 2] = board[(to & 0x38) + 0];
-          board[(to & 0x38) + 0] = 0;
-        } else if ((to & 7) === 6) {
-          board[(to & 0x38) + 5] = board[(to & 0x38) + 7];
-          board[(to & 0x38) + 7] = 0;
-        }
-      }
-
-      if (board[to]) {
-        lostPieces.push(board[to]);
-      } else if (to === enPassant && (board[from] & 7) === PAWN) {
-        // Captue en passant
-        const d = (to & 7) - (from & 7);
-        lostPieces.push(board[from + d]);
-        board[from + d] = 0;
-      }
-
-      board[to] = board[from];
-      board[from] = 0;
-
-      enPassant = null;
-      if ((board[to] & 7) === PAWN) {
-        // Set en passant flag
-        if (Math.abs(to - from) === 16) {
-          enPassant = (from + to) / 2;
-        }
-
-        // Promotion to queen
-        if (to < 8) {
-          board[to] = WHITE + QUEEN;
-        } else if (to >= 56) {
-          board[to] = BLACK + QUEEN;
-        }
-      }
-
-      if (from === 0) {
-        castling.q = false;
-      } else if (from === 4) {
-        castling.q = false;
-        castling.k = false;
-      } else if (from === 7) {
-        castling.k = false;
-      } else if (from === 56) {
-        castling.Q = false;
-      } else if (from === 60) {
-        castling.Q = false;
-        castling.K = false;
-      } else if (from === 63) {
-        castling.K = false;
-      }
-
-      lastPos = to;
+    let moves = history.concat(move ? [move] : []);
+    for (const move of moves) {
+      mutateState(state, move);
     }
 
-    const check =
-      lastPos !== null &&
-      getPossibleMoves(board, lastPos, castling, enPassant)
-        .map((i) => board[i])
-        .includes(board[lastPos] >= BLACK ? WHITE + KING : BLACK + KING);
+    const blacksMove = moves.length % 2 !== 0;
+    state.check = testCheck(state, blacksMove);
 
-    let mate = false;
-    if (check) {
-      const checkedPlayerPositions = board
-        .map((_, pos) => pos)
-        .filter((pos) =>
-          lastPos !== null && board[lastPos] >= BLACK
-            ? board[pos] < BLACK
-            : board[pos] >= BLACK
-        );
+    state.mate = testMate(state, blacksMove, state.check);
 
-      mate = true;
-      for (const from of checkedPlayerPositions) {
-        const { possibleMoves } = getMoveRestrictions(
-          board,
-          from,
-          castling,
-          enPassant
-        );
-        if (possibleMoves.length > 0) {
-          mate = false;
-          break;
-        }
-      }
-    }
-
-    return { board, lostPieces, check, mate, castling, enPassant };
+    return state;
   }, [FEN, history, move]);
 
   const blacksMove = history.length % 2 != 0;
@@ -237,7 +167,7 @@ export default function Home() {
 
   // http://localhost:3000/?state=zjKS0sMU5oDn
   const { possibleMoves, forbiddenMoves } = useMemo(
-    () => getMoveRestrictions(board, cursorPos, castling, enPassant),
+    () => getMoveRestrictions({ board, castling, enPassant }, cursorPos),
     [board, cursorPos, castling, enPassant]
   );
 
@@ -263,17 +193,19 @@ export default function Home() {
         <span className="text-2xl">.com</span>
       </h1>
       <div className="flex flex-col w-full md:w-auto gap-1 md:gap-0">
-        <AspectBox
-          outerClassName="md:px-8 w-full"
-          aspect="6.25%"
-          innerClassName="flex flex-row"
-        >
-          {lostPieces
-            .filter((piece) => (blacksMove ? piece < BLACK : piece >= BLACK))
-            .map((piece, i) => (
-              <RawPiece key={i} className="" piece={piece} />
-            ))}
-        </AspectBox>
+        {lostPieces && (
+          <AspectBox
+            outerClassName="md:px-8 w-full"
+            aspect="6.25%"
+            innerClassName="flex flex-row"
+          >
+            {lostPieces
+              .filter((piece) => (blacksMove ? piece < BLACK : piece >= BLACK))
+              .map((piece, i) => (
+                <RawPiece key={i} className="" piece={piece} />
+              ))}
+          </AspectBox>
+        )}
         <div className="md:w-auto w-full flex flex-col gap-0">
           <div className="hidden md:flex flex-row w-full justify-center text-slate-500 font-bold">
             {Array(8)
@@ -552,17 +484,19 @@ export default function Home() {
           </div>
         </div>
 
-        <AspectBox
-          outerClassName="md:px-8 w-full"
-          aspect="6.25%"
-          innerClassName="flex flex-row"
-        >
-          {lostPieces
-            .filter((piece) => (blacksMove ? piece >= BLACK : piece < BLACK))
-            .map((piece, i) => (
-              <RawPiece key={i} className="" piece={piece} />
-            ))}
-        </AspectBox>
+        {lostPieces && (
+          <AspectBox
+            outerClassName="md:px-8 w-full"
+            aspect="6.25%"
+            innerClassName="flex flex-row"
+          >
+            {lostPieces
+              .filter((piece) => (blacksMove ? piece >= BLACK : piece < BLACK))
+              .map((piece, i) => (
+                <RawPiece key={i} className="" piece={piece} />
+              ))}
+          </AspectBox>
+        )}
       </div>
       <div className="flex flex-row w-full justify-between text-xs opacity-50 max-w-[528px] md:px-0 px-1">
         <p>Copyright 2022, D. Revelj</p>
@@ -718,17 +652,14 @@ function rowcol(boardIndex: number, blacksMove: boolean) {
   return [row, col];
 }
 
-function getMoveRestrictions(
-  board: number[],
-  from: number | null,
-  castling: { k: boolean; q: boolean; K: boolean; Q: boolean },
-  enPassant: number | null
-) {
+function getMoveRestrictions(state: State, from: number | null) {
+  const { board } = state;
+
   if (from === null || board[from] === 0) {
     return { forbiddenMoves: [], possibleMoves: [] };
   }
 
-  const possibleMoves = getPossibleMoves(board, from, castling, enPassant);
+  const possibleMoves = getPossibleMoves(state, from);
 
   const isBlack = board[from] >= BLACK;
 
@@ -740,19 +671,19 @@ function getMoveRestrictions(
 
   const forbiddenMoves: number[] = [];
   for (const to of possibleMoves) {
-    const mutatedBoard = [...board];
-    mutatedBoard[to] = mutatedBoard[from];
-    mutatedBoard[from] = 0;
+    const mutatedState = {
+      board: [...board],
+      castling: { ...state.castling },
+      enPassant: state.enPassant,
+    };
+    mutateState(mutatedState, [from, to]);
 
-    const ourKingsPos = mutatedBoard.indexOf((isBlack ? BLACK : WHITE) + KING);
+    const ourKingsPos = mutatedState.board.indexOf(
+      (isBlack ? BLACK : WHITE) + KING
+    );
 
     for (const [piece, pos] of opponentPieces) {
-      const opponentMoves = getPossibleMoves(
-        mutatedBoard,
-        pos,
-        castling,
-        enPassant
-      );
+      const opponentMoves = getPossibleMoves(mutatedState, pos);
 
       if (opponentMoves.includes(ourKingsPos)) {
         forbiddenMoves.push(to);
@@ -766,15 +697,12 @@ function getMoveRestrictions(
   };
 }
 
-function getPossibleMoves(
-  board: number[],
-  i: number | null,
-  castling: { k: boolean; q: boolean; K: boolean; Q: boolean },
-  enPassant: number | null
-): number[] {
+function getPossibleMoves(state: State, i: number | null): number[] {
   if (i === null) {
     return [];
   }
+
+  const { board, castling, enPassant } = state;
 
   const moves = [];
   const [row, col] = [Math.floor(i / 8), i % 8];
@@ -983,11 +911,117 @@ const SVG_PIECES = new Map([
   [BLACK + PAWN, BlackPawn],
 ]);
 
-function mutateBoard(
-  board: number[],
-  move: number[] | null,
-  castling: { k: boolean; q: boolean; K: boolean; Q: boolean },
-  enPassant: number | null
+function mutateState(state: State, move: number[] | null): void {
+  let { board, lostPieces, castling, enPassant } = state;
+
+  if (move !== null) {
+    const [from, to] = move;
+
+    if ((board[from] & 7) === KING && (from & 7) === 4) {
+      // castling
+      if ((to & 7) === 1) {
+        board[(to & 0x38) + 2] = board[(to & 0x38) + 0];
+        board[(to & 0x38) + 0] = 0;
+      } else if ((to & 7) === 6) {
+        board[(to & 0x38) + 5] = board[(to & 0x38) + 7];
+        board[(to & 0x38) + 7] = 0;
+      }
+    }
+
+    if (board[to]) {
+      if (lostPieces !== undefined) {
+        lostPieces.push(board[to]);
+      }
+    } else if (to === enPassant && (board[from] & 7) === PAWN) {
+      // Captue en passant
+      const d = (to & 7) - (from & 7);
+      if (lostPieces !== undefined) {
+        lostPieces.push(board[from + d]);
+      }
+      board[from + d] = 0;
+    }
+
+    board[to] = board[from];
+    board[from] = 0;
+
+    enPassant = null;
+    if ((board[to] & 7) === PAWN) {
+      // Set en passant flag
+      if (Math.abs(to - from) === 16) {
+        enPassant = (from + to) / 2;
+      }
+
+      // Promotion to queen
+      if (to < 8) {
+        board[to] = WHITE + QUEEN;
+      } else if (to >= 56) {
+        board[to] = BLACK + QUEEN;
+      }
+    }
+
+    if (from === 0) {
+      castling.q = false;
+    } else if (from === 4) {
+      castling.q = false;
+      castling.k = false;
+    } else if (from === 7) {
+      castling.k = false;
+    } else if (from === 56) {
+      castling.Q = false;
+    } else if (from === 60) {
+      castling.Q = false;
+      castling.K = false;
+    } else if (from === 63) {
+      castling.K = false;
+    }
+
+    state.castling = castling;
+    state.enPassant = enPassant;
+  }
+}
+
+function testCheck(state: State, blacksMove: boolean) {
+  const colorValue: number = blacksMove ? BLACK : WHITE;
+
+  const check: boolean = state.board
+    .map((_, from) => from)
+    .filter(
+      (from) =>
+        state.board[from] !== 0 && (state.board[from] & 8) !== colorValue
+    )
+    .map((from) =>
+      getPossibleMoves(state, from)
+        .map((to) => state.board[to])
+        .includes((colorValue & 8) + KING)
+    )
+    .some((includesOpponentsKing) => includesOpponentsKing);
+
+  return check;
+}
+
+function testMate(
+  state: State,
+  blacksMove: boolean,
+  check: boolean | undefined
 ) {
-  return { board, castling, enPassant };
+  if (check === undefined) {
+    check = testCheck(state, blacksMove);
+  }
+
+  if (!check) {
+    return false;
+  }
+
+  const colorValue: number = blacksMove ? BLACK : WHITE;
+
+  const mate = state.board
+    .map((_, from) => from)
+    .filter(
+      (from) =>
+        state.board[from] !== 0 && (state.board[from] & 8) === colorValue
+    )
+    .map((from) => getMoveRestrictions(state, from).possibleMoves.length)
+    .every((numPossibleMoves) => numPossibleMoves === 0);
+
+  return mate;
 }
