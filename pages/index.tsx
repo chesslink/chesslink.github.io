@@ -50,7 +50,7 @@ interface State {
 }
 
 const ISSUE_URL = "https://github.com/chesslink/chesslink.github.io/issues";
-const TERMINATOR = "+"
+const TERMINATOR = "~";
 
 export default function Home() {
   const router = useRouter();
@@ -166,7 +166,9 @@ export default function Home() {
         <h1 className="text-3xl font-black text-black dark:text-slate-300">
           chess<span className="text-board-dark dark:text-slate-500">link</span>
         </h1>
-        <span className="text-xs font-bold text-slate-500">chesslink.github.io</span>
+        <span className="text-xs font-bold text-slate-500">
+          chesslink.github.io
+        </span>
       </div>
       <div className="flex flex-col w-full md:w-auto gap-1 md:gap-0">
         {state.lostPieces && (
