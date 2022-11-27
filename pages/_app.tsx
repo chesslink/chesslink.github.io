@@ -15,21 +15,23 @@ export default function App({ Component, pageProps }: AppProps) {
           content="Online correspondence chess - free and without registration"
           key="desc"
         />
-        <meta name="keywords" content="chess, correspondence, free, anonymous" />
+        <meta
+          name="keywords"
+          content="chess, correspondence, free, anonymous"
+        />
         <meta
           property="og:image"
           content="https://chesslink.github.io/zoe-holling-UDfmSK4AS3E-unsplash-crop.jpg"
         />
-      </Head>
-      <Script
-        strategy="afterInteractive"
-        src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`}
-      />
-      <Script
-        id="google-analytics"
-        strategy="afterInteractive"
-        dangerouslySetInnerHTML={{
-          __html: `
+        <Script
+          strategy="afterInteractive"
+          src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`}
+        />
+        <Script
+          id="google-analytics"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
@@ -41,8 +43,9 @@ export default function App({ Component, pageProps }: AppProps) {
             page_path: window.location.pathname,
           });
         `,
-        }}
-      />
+          }}
+        />
+      </Head>
       <Component {...pageProps} />
     </>
   );
