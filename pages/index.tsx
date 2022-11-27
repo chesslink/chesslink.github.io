@@ -49,8 +49,7 @@ interface State {
   mate?: boolean;
 }
 
-const ISSUE_URL =
-  "https://github.com/chessbyemail/chessbyemail.github.io/issues";
+const ISSUE_URL = "https://github.com/chesslink/chesslink.github.io/issues";
 
 export default function Home() {
   const router = useRouter();
@@ -161,11 +160,13 @@ export default function Home() {
   return (
     <div className="w-full min-h-full flex flex-col items-center justify-between gap-4 md:py-4 max-w-xl mx-auto">
       <div></div>
-      <h1 className="text-3xl font-black text-black dark:text-slate-300">
-        chess<span className="text-board-dark dark:text-slate-500">by</span>
-        email
-        <span className="text-2xl">.com</span>
-      </h1>
+
+      <div className="flex flex-col gap-0 items-center">
+        <h1 className="text-3xl font-black text-black dark:text-slate-300">
+          chess<span className="text-board-dark dark:text-slate-500">link</span>
+        </h1>
+        <span className="text-xs font-bold text-slate-500">chesslink.github.io</span>
+      </div>
       <div className="flex flex-col w-full md:w-auto gap-1 md:gap-0">
         {state.lostPieces && (
           <AspectBox
@@ -361,7 +362,7 @@ export default function Home() {
                     {!error && history.length === 0 && !hideWelcome && (
                       <Requester onClose={() => void setHideWelcome(true)}>
                         <p>
-                          Welcome to <i>chessbyemail</i>, a web app for playing
+                          Welcome to <i>chesslink</i>, a web app for playing
                           correspondance chess.
                         </p>
                         <p>
@@ -426,7 +427,7 @@ export default function Home() {
                                 onClick={() =>
                                   void navigator
                                     .share({
-                                      title: "chessbyemail.com",
+                                      title: "Chesslink",
                                       url: newStateLink,
                                     })
                                     .then(() => {})
@@ -511,8 +512,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="flex flex-row w-full justify-between text-xs text-gray-500 max-w-[528px] md:px-0 px-1">
-        <p>Copyright 2022, D. Revelj</p>
+      <div className="flex flex-row w-full justify-between text-xs text-slate-500 max-w-[528px] md:px-0 px-1">
         <p>Version {publicRuntimeConfig?.version}</p>
         <a className="hover:underline" href={ISSUE_URL}>
           Report an issue

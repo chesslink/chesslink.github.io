@@ -9,7 +9,7 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <>
       <Head>
-        <title>ChessByEmail.com</title>
+        <title>Chesslink</title>
         <meta
           name="description"
           content="Online correspondence chess - free and without registration"
@@ -17,7 +17,7 @@ export default function App({ Component, pageProps }: AppProps) {
         />
         <meta
           property="og:image"
-          content="https://www.chessbyemail.com/vd-photography-Bwt5M8z1kXg-unsplash.jpg"
+          content="https://chesslink.github.io/vd-photography-Bwt5M8z1kXg-unsplash.jpg"
         />
       </Head>
       <Script

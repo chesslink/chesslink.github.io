@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && next export -o docs && git restore docs/.nojekyll docs/CNAME",
+    "build": "next build && next export -o docs && git restore docs/.nojekyll",
     "start": "next start",
     "lint": "next lint"
   },
