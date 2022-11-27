@@ -50,17 +50,18 @@ interface State {
 }
 
 const ISSUE_URL = "https://github.com/chesslink/chesslink.github.io/issues";
+const TERMINATOR = "+"
 
 export default function Home() {
   const router = useRouter();
   const inputHistory = router.query.state
     ? (router.query.state as string)
-    : ".";
+    : TERMINATOR;
 
   const { history, error }: { history: number[][]; error?: string } =
     useMemo(() => {
       if (
-        inputHistory.charAt(inputHistory.length - 1) !== "." ||
+        inputHistory.charAt(inputHistory.length - 1) !== TERMINATOR ||
         inputHistory.length % 2 === 0
       ) {
         return { error: "truncated", history: [] };
@@ -124,7 +125,7 @@ export default function Home() {
 
     return `${
       typeof window !== "undefined" ? window.location.origin : ""
-    }/?state=${newEncodedHistory}.`;
+    }/?state=${newEncodedHistory}${TERMINATOR}`;
   }, [history, move]);
 
   const linkInputRef = useRef<HTMLInputElement | null>(null);
