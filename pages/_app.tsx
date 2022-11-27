@@ -15,9 +15,10 @@ export default function App({ Component, pageProps }: AppProps) {
           content="Online correspondence chess - free and without registration"
           key="desc"
         />
+        <meta name="keywords" content="chess, correspondence, free, anonymous" />
         <meta
           property="og:image"
-          content="https://chesslink.github.io/vd-photography-Bwt5M8z1kXg-unsplash.jpg"
+          content="https://chesslink.github.io/zoe-holling-UDfmSK4AS3E-unsplash-crop.jpg"
         />
       </Head>
       <Script
