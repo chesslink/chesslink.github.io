@@ -279,9 +279,7 @@ export default function Home() {
                                     />
                                   )}
                                   {possibleMoves.includes(i) && (
-                                    <div
-                                      className="absolute h-[87.5%] w-[87.5%] border-dotted border-4 border-slate-500 dark:border-slate-800 rounded-full -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2"
-                                    ></div>
+                                    <div className="absolute h-[87.5%] w-[87.5%] border-dotted border-4 border-slate-500 dark:border-slate-800 rounded-full -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2"></div>
                                   )}
                                   {forbiddenMoves.includes(i) && (
                                     <div
@@ -657,7 +655,11 @@ function getMoveRestrictions(state: State, from: number | null) {
   };
 }
 
-function getPossibleMoves(state: State, from: number | null): number[] {
+function getPossibleMoves(
+  state: State,
+  from: number | null,
+  allowCastling: boolean = true
+): number[] {
   if (from === null) {
     return [];
   }
@@ -667,7 +669,8 @@ function getPossibleMoves(state: State, from: number | null): number[] {
   const moves = [];
   const [row, col] = [Math.floor(from / 8), from % 8];
   const piece = board[from];
-  const d = piece >= BLACK ? 1 : -1;
+  const blacksMove = piece >= BLACK;
+  const d = blacksMove ? 1 : -1;
 
   switch (piece & 7) {
     case PAWN:
@@ -783,19 +786,35 @@ function getPossibleMoves(state: State, from: number | null): number[] {
           [1, 1],
         ].map(([dr, dc]) => [row + dr, col + dc])
       );
-      if (piece >= BLACK) {
-        if (castling.k === true) {
-          moves.push([0, 6]);
+
+      if (allowCastling && !testCheck(state, blacksMove)) {
+        // One may not castle out of, through, or into check.
+        if (
+          ((blacksMove && castling.k === true) ||
+            (!blacksMove && castling.K === true)) &&
+          board[from + 1] === 0 &&
+          board[from + 2] === 0
+        ) {
+          // kingside
+          const throughState = cloneState(state);
+          mutateState(throughState, [from, from + 1]);
+          if (!testCheck(throughState, blacksMove)) {
+            moves.push([row, col + 2]);
+          }
         }
-        if (castling.q === true) {
-          moves.push([0, 1]);
-        }
-      } else {
-        if (castling.K === true) {
-          moves.push([7, 6]);
-        }
-        if (castling.Q === true) {
-          moves.push([7, 1]);
+        if (
+          ((blacksMove && castling.q === true) ||
+            (!blacksMove && castling.Q === true)) &&
+          board[from - 1] === 0 &&
+          board[from - 2] === 0 &&
+          board[from - 3] === 0
+        ) {
+          // queenside
+          const throughState = cloneState(state);
+          mutateState(throughState, [from, from - 1]);
+          if (!testCheck(throughState, blacksMove)) {
+            moves.push([row, col - 2]);
+          }
         }
       }
 
@@ -878,11 +897,12 @@ function mutateState(state: State, move: number[] | null): void {
     const [from, to] = move;
 
     if ((board[from] & 7) === KING && (from & 7) === 4) {
-      // castling
-      if ((to & 7) === 1) {
-        board[(to & 0x38) + 2] = board[(to & 0x38) + 0];
+      if ((to & 7) === 2) {
+        // queenside castling
+        board[(to & 0x38) + 3] = board[(to & 0x38) + 0];
         board[(to & 0x38) + 0] = 0;
       } else if ((to & 7) === 6) {
+        // kingside castling
         board[(to & 0x38) + 5] = board[(to & 0x38) + 7];
         board[(to & 0x38) + 7] = 0;
       }
@@ -943,18 +963,20 @@ function mutateState(state: State, move: number[] | null): void {
 function testCheck(state: State, blacksMove: boolean) {
   const colorValue: number = blacksMove ? BLACK : WHITE;
 
-  const check: boolean = state.board
+  const opponentPositions = state.board
     .map((_, from) => from)
     .filter(
       (from) =>
         state.board[from] !== 0 && (state.board[from] & 8) !== colorValue
-    )
+    );
+
+  const check: boolean = opponentPositions
     .map((from) =>
-      getPossibleMoves(state, from)
+      getPossibleMoves(state, from, false)
         .map((to) => state.board[to])
         .includes((colorValue & 8) + KING)
     )
-    .some((includesOpponentsKing) => includesOpponentsKing);
+    .some((includesKing) => includesKing);
 
   return check;
 }
@@ -984,4 +1006,13 @@ function testMate(
     .every((numPossibleMoves) => numPossibleMoves === 0);
 
   return mate;
+}
+
+function cloneState(state: State): State {
+  return {
+    ...state,
+    board: [...state.board],
+    castling: { ...state.castling },
+    lostPieces: state.lostPieces ? [...state.lostPieces] : undefined,
+  };
 }
