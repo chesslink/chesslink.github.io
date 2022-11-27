@@ -49,21 +49,33 @@ interface State {
   mate?: boolean;
 }
 
+const ISSUE_URL =
+  "https://github.com/chessbyemail/chessbyemail.github.io/issues";
+
 export default function Home() {
   const router = useRouter();
-  const { state: inputHistory } = router.query;
+  const inputHistory = router.query.state
+    ? (router.query.state as string)
+    : ".";
 
-  const history = useMemo(() => {
-    const dest = [];
-    const src = inputHistory || [];
-    for (let i = 0; i < src.length; i += 2) {
-      let from = BASE64.indexOf(src[i + 0]);
-      let to = BASE64.indexOf(src[i + 1]);
+  const { history, error }: { history: number[][]; error?: string } =
+    useMemo(() => {
+      if (
+        inputHistory.charAt(inputHistory.length - 1) !== "." ||
+        inputHistory.length % 2 === 0
+      ) {
+        return { error: "truncated", history: [] };
+      }
 
-      dest.push([from, to]);
-    }
-    return dest;
-  }, [inputHistory]);
+      const history: number[][] = [];
+      for (let i = 0; i < inputHistory.length - 1; i += 2) {
+        let from = BASE64.indexOf(inputHistory[i + 0]);
+        let to = BASE64.indexOf(inputHistory[i + 1]);
+
+        history.push([from, to]);
+      }
+      return { history };
+    }, [inputHistory]);
 
   const [hideWelcome, setHideWelcome] = useState(false);
   const [hideLink, setHideLink] = useState(false);
@@ -112,7 +124,7 @@ export default function Home() {
 
     return `${
       typeof window !== "undefined" ? window.location.origin : ""
-    }/?state=${newEncodedHistory}`;
+    }/?state=${newEncodedHistory}.`;
   }, [history, move]);
 
   const linkInputRef = useRef<HTMLInputElement | null>(null);
@@ -331,7 +343,21 @@ export default function Home() {
                         </text>
                       </svg>
                     )}
-                    {history.length === 0 && !hideWelcome && (
+                    {error && (
+                      <Requester>
+                        <h2 className="text-lg self-center">Link error</h2>
+                        <p>
+                          It looks like the game link is truncated. Please
+                          verify the link and try again. If that doesn't work,
+                          please{" "}
+                          <a className="underline" href={ISSUE_URL}>
+                            report an issue
+                          </a>
+                          .
+                        </p>
+                      </Requester>
+                    )}
+                    {!error && history.length === 0 && !hideWelcome && (
                       <Requester onClose={() => void setHideWelcome(true)}>
                         <p>
                           Welcome to <i>chessbyemail</i>, a web app for playing
@@ -456,13 +482,11 @@ export default function Home() {
           </AspectBox>
         )}
       </div>
+
       <div className="flex flex-row w-full justify-between text-xs text-gray-500 max-w-[528px] md:px-0 px-1">
         <p>Copyright 2022, D. Revelj</p>
         <p>Version {publicRuntimeConfig?.version}</p>
-        <a
-          className="hover:underline"
-          href="https://github.com/chessbyemail/chessbyemail.github.io/issues"
-        >
+        <a className="hover:underline" href={ISSUE_URL}>
           Report an issue
         </a>
       </div>
