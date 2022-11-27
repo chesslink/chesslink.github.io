@@ -1,4 +1,3 @@
-* Släng inte upp länk-popup direkt. Visa knapp under brädet i stället?
 * uppdatera readme
 * lägg till licens
 * byt namn till chesslink

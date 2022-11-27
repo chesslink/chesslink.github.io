@@ -78,8 +78,9 @@ export default function Home() {
     }, [inputHistory]);
 
   const [hideWelcome, setHideWelcome] = useState(false);
-  const [hideLink, setHideLink] = useState(false);
+  const [showLink, setShowLink] = useState(false);
   const [hideOpponentsMove, setHideOpponentsMove] = useState(false);
+  const [shared, setShared] = useState(false);
 
   const [cursorPos, setCursorPos] = useState<number | null>(null);
   const [hoverPos, setHoverPos] = useState<number | null>(null);
@@ -271,7 +272,6 @@ export default function Home() {
                                         setCursorPos(i);
                                       } else if (cursorPos !== null) {
                                         if (possibleMoves.includes(i)) {
-                                          setHideLink(false);
                                           setMove([cursorPos, i]);
                                           setCursorPos(null);
                                         }
@@ -279,6 +279,7 @@ export default function Home() {
                                     } else if (i === move[0]) {
                                       setMove(null);
                                       setCursorPos(i);
+                                      setShared(true);
                                     }
                                   }}
                                   onMouseOver={() => void setHoverPos(i)}
@@ -382,10 +383,10 @@ export default function Home() {
                         </div>
                       </Requester>
                     )}
-                    {newStateLink && !hideLink && (
+                    {newStateLink && showLink && (
                       <Requester
                         className="items-center"
-                        onClose={() => void setHideLink(true)}
+                        onClose={() => void setShowLink(false)}
                       >
                         {state.check && (
                           <h1 className="text-lg font-bold">
@@ -481,6 +482,33 @@ export default function Home() {
               ))}
           </AspectBox>
         )}
+
+        <div
+          className={twCascade(
+            "w-full flex flex-row justify-center pt-2 gap-2 items-center"
+          )}
+        >
+          <div className="relative">
+            <div
+              className={twCascade(
+                "absolute -top-3 -translate-x-1/2 left-1/2 pointer-events-none rounded-full w-3 h-3 bg-board-dark animate-bounce transition-opacity duration-300",
+                {
+                  "opacity-0": !newStateLink || shared || history.length >= 4,
+                }
+              )}
+            />
+            <button
+              style={{ all: "revert" }}
+              onClick={() => {
+                setShowLink(true);
+                setShared(true);
+              }}
+              disabled={newStateLink === null || showLink}
+            >
+              Submit move
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-row w-full justify-between text-xs text-gray-500 max-w-[528px] md:px-0 px-1">
