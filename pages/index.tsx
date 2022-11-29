@@ -49,6 +49,7 @@ interface State {
   mate?: boolean;
 }
 
+const ABOUT_URL = "https://github.com/chesslink/chesslink.github.io/#readme";
 const ISSUE_URL = "https://github.com/chesslink/chesslink.github.io/issues";
 const TERMINATOR = "~";
 
@@ -517,6 +518,9 @@ export default function Home() {
 
       <div className="flex flex-row w-full justify-between text-xs text-slate-500 max-w-[528px] md:px-0 px-1">
         <p>Version {publicRuntimeConfig?.version}</p>
+        <a className="hover:underline" href={ABOUT_URL}>
+          About
+        </a>
         <a className="hover:underline" href={ISSUE_URL}>
           Report an issue
         </a>
