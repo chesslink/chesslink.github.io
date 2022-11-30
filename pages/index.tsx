@@ -498,13 +498,17 @@ export default function Home() {
           <div className="relative">
             <div
               className={twCascade(
-                "absolute -top-3 -translate-x-1/2 left-1/2 pointer-events-none rounded-full w-3 h-3 bg-board-dark animate-bounce transition-opacity duration-300",
+                "absolute -top-3 left-1/2",
+                "pointer-events-none animate-bounce",
+                "transition-opacity duration-300",
                 {
                   "opacity-0":
                     !newStateLink || submitted || history.length >= 4,
                 }
               )}
-            />
+            >
+              <div className="rounded-full w-3 h-3 bg-board-dark -translate-x-1/2"></div>
+            </div>
             <button
               style={{ all: "revert" }}
               onClick={() => {
