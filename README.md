@@ -1,6 +1,7 @@
 ## About Chesslink
 
 Chesslink is a website where you can play correspondance chess.
+[https://chesslink.github.io/]
 
 The state of each game is owned by the users in the form of links. Therefore there is no limit to how many games can be hosted on chesslink.
 
