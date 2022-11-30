@@ -79,9 +79,9 @@ export default function Home() {
     }, [inputHistory]);
 
   const [hideWelcome, setHideWelcome] = useState(false);
-  const [showLink, setShowLink] = useState(false);
+  const [showLink, setShowLink] = useState<boolean | string>(false);
   const [hideOpponentsMove, setHideOpponentsMove] = useState(false);
-  const [shared, setShared] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   const [cursorPos, setCursorPos] = useState<number | null>(null);
   const [hoverPos, setHoverPos] = useState<number | null>(null);
@@ -284,7 +284,7 @@ export default function Home() {
                                     } else if (i === move[0]) {
                                       setMove(null);
                                       setCursorPos(i);
-                                      setShared(true);
+                                      setSubmitted(true);
                                     }
                                   }}
                                   onMouseOver={() => void setHoverPos(i)}
@@ -366,7 +366,7 @@ export default function Home() {
                     {!error && history.length === 0 && !hideWelcome && (
                       <Requester onClose={() => void setHideWelcome(true)}>
                         <p>
-                          Welcome to <i>chesslink</i>, a web app for playing
+                          Welcome to <i>chesslink</i>, a website for playing
                           correspondance chess.
                         </p>
                         <p>
@@ -398,8 +398,10 @@ export default function Home() {
                             {state.mate ? "Checkmate!" : "Check!"}
                           </h1>
                         )}
-                        <p className="text-center">
+                        <p>
                           Send the following link to your opponent
+                          {showLink === "copied" &&
+                            " (it's been copied to clipboard)"}
                         </p>
                         <div className="flex flex-row gap-4">
                           <input
@@ -498,17 +500,25 @@ export default function Home() {
               className={twCascade(
                 "absolute -top-3 -translate-x-1/2 left-1/2 pointer-events-none rounded-full w-3 h-3 bg-board-dark animate-bounce transition-opacity duration-300",
                 {
-                  "opacity-0": !newStateLink || shared || history.length >= 4,
+                  "opacity-0":
+                    !newStateLink || submitted || history.length >= 4,
                 }
               )}
             />
             <button
               style={{ all: "revert" }}
               onClick={() => {
-                setShowLink(true);
-                setShared(true);
+                setSubmitted(true);
+                if (navigator) {
+                  navigator.clipboard.writeText(newStateLink || "").then(
+                    () => void setShowLink("copied"),
+                    () => void setShowLink("not copied")
+                  );
+                } else {
+                  setShowLink(true);
+                }
               }}
-              disabled={newStateLink === null || showLink}
+              disabled={newStateLink === null || showLink !== false}
             >
               Submit move
             </button>
@@ -517,7 +527,8 @@ export default function Home() {
       </div>
 
       <div className="flex flex-row w-full justify-between text-xs text-slate-500 max-w-[528px] md:px-0 px-1">
-        <p>Version {publicRuntimeConfig?.version}</p>
+        <p>(C) 2022 D. Revelj</p>
+        <p>v {publicRuntimeConfig?.version}</p>
         <a className="hover:underline" href={ABOUT_URL}>
           About
         </a>
