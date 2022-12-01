@@ -366,17 +366,17 @@ export default function Home() {
                     {!error && history.length === 0 && !hideWelcome && (
                       <Requester onClose={() => void setHideWelcome(true)}>
                         <p>
-                          Welcome to <i>chesslink</i>, a website for playing
-                          correspondance chess.
+                          Welcome to <i>Chesslink</i>, a website for playing
+                          casual correspondance chess.
                         </p>
                         <p>
-                          When you've made your first move, a link is generated.
-                          You send this link to your opponent who continues the
-                          game.
+                          When you submit your first move, a link is created.
+                          You send this link to your opponent, who continues the
+                          game from there.
                         </p>
                         <p>
-                          The state of the game is not stored on this server, it
-                          is encoded in the links you send when playing.
+                          Chesslink supports <i>castling</i>, <i>promotion</i>{" "}
+                          (to queen) and <i>en passant</i>.
                         </p>
                         <div className="self-center">
                           <button
