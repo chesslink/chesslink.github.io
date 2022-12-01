@@ -1,6 +1,6 @@
 {
-  "name": "chess-by-email",
-  "version": "2022.11.30",
+  "name": "chesslink",
+  "version": "2022.12.01",
   "private": true,
   "scripts": {
     "dev": "next dev",
