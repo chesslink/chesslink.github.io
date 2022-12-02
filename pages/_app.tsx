@@ -22,23 +22,30 @@ export default function App({ Component, pageProps }: AppProps) {
           property="og:image"
           content="https://chesslink.github.io/zoe-holling-UDfmSK4AS3E-unsplash-crop.jpg"
         />
-        <script
-          async
-          src={`https://www.googletagmanager.com/gtag/js?id=${GA_TRACKING_ID}`}
-        ></script>
+
         <script
           type="text/javascript"
           dangerouslySetInnerHTML={{
             __html: `
               window.dataLayer = window.dataLayer || [];
-              function gtag(){window.dataLayer.push(arguments);}
-              gtag('js', new Date());
+              function gtag(){dataLayer.push(arguments);}
               gtag('consent', 'default', {
                 'ad_storage': 'denied',
                 'analytics_storage': 'denied'
-              });
-              gtag('config', '${GA_TRACKING_ID}');
-              `,
+              });`,
+          }}
+        ></script>
+        <script
+          async
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_TRACKING_ID}`}
+        ></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){window.dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', '${GA_TRACKING_ID}');`,
           }}
         ></script>
       </Head>
