@@ -367,7 +367,8 @@ export default function Home() {
                       <Requester onClose={() => void setHideWelcome(true)}>
                         <p>
                           Welcome to <i>Chesslink</i>, a website for playing
-                          casual correspondance chess.
+                          casual correspondance chess. This service is free and
+                          without user accounts. All you need is an opponent.
                         </p>
                         <p>
                           When you submit your first move, a link is created.
