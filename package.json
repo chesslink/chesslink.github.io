@@ -1,6 +1,6 @@
 {
   "name": "chesslink",
-  "version": "2022.12.02",
+  "version": "2022.12.06",
   "private": true,
   "scripts": {
     "dev": "next dev",
