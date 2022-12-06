@@ -1,4 +1,3 @@
-* svarts tagna pjäser syns inte i dark mode
 * på iphone safari renderas ibland fel pjäs på sista raden
 * google tycker att sidan är bedräglig
 * lägg till knapp för att stänga fönstret efter submit

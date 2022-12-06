@@ -162,7 +162,7 @@ export default function Home() {
   // https://coolors.co/5f634f-9bc4cb-cfebdf-e2fadb-dbefbc
 
   return (
-    <div className="w-full min-h-full flex flex-col items-center justify-between gap-4 md:py-4 max-w-xl mx-auto">
+    <div className="w-full min-h-full flex flex-col items-center justify-between gap-4 md:py-4 max-w-xl mx-auto dark:bg-slate-700">
       <div></div>
 
       <div className="flex flex-col gap-0 items-center">
@@ -186,7 +186,7 @@ export default function Home() {
                 <RawPiece
                   key={i}
                   className={twCascade({
-                    "outline-4 outline-slate-700 outline":
+                    "outline-4 outline-slate-700 dark:outline-slate-500 outline":
                       i === arr.length - 1 &&
                       state.pieceLost &&
                       move !== null &&
@@ -199,7 +199,7 @@ export default function Home() {
           </AspectBox>
         )}
         <div className="md:w-auto w-full flex flex-col gap-0">
-          <div className="hidden md:flex flex-row w-full justify-center text-board-darker font-bold">
+          <div className="hidden md:flex flex-row w-full justify-center text-board-darker dark:text-slate-400 font-bold">
             {Array(8)
               .fill(0)
               .map((_, i) => (
@@ -210,7 +210,7 @@ export default function Home() {
           </div>
 
           <div className="md:w-auto w-full flex flex-row gap-0">
-            <div className="md:flex hidden flex-col h-full justify-center items-center w-6 text-board-darker font-bold py-2">
+            <div className="md:flex hidden flex-col h-full justify-center items-center w-6 text-board-darker dark:text-slate-400 font-bold py-2">
               {Array(8)
                 .fill(0)
                 .map((_, i) => (
@@ -220,7 +220,7 @@ export default function Home() {
                 ))}
             </div>
 
-            <div className="w-full md:w-auto border-board-dark md:border-8 border-double border-y-8 box-content">
+            <div className="w-full md:w-auto border-board-dark dark:border-slate-400 md:border-8 border-double border-y-8 box-content">
               <AspectBox outerClassName="md:w-128 w-full" aspect="100%">
                 {/* <div className="w-full h-0 pb-[100%] relative md:w-[512px]">
                 <div className="absolute inset-0"> */}
@@ -468,7 +468,7 @@ export default function Home() {
               </AspectBox>
             </div>
 
-            <div className="hidden md:flex flex-col h-full justify-center items-center w-6 text-board-darker font-bold py-2">
+            <div className="hidden md:flex flex-col h-full justify-center items-center w-6 text-board-darker dark:text-slate-400 before:font-bold py-2">
               {Array(8)
                 .fill(0)
                 .map((_, i) => (
@@ -479,7 +479,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="hidden md:flex flex-row w-full justify-center text-board-darker font-bold">
+          <div className="hidden md:flex flex-row w-full justify-center text-board-darker dark:text-slate-400 font-bold">
             {Array(8)
               .fill(0)
               .map((_, i) => (
@@ -502,7 +502,7 @@ export default function Home() {
                 <RawPiece
                   key={i}
                   className={twCascade({
-                    "outline-4 outline-slate-700 outline":
+                    "outline-4 outline-slate-700 dark:outline-slate-500 outline":
                       i === arr.length - 1 &&
                       state.pieceLost &&
                       !hideOpponentsMove &&
