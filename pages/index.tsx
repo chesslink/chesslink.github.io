@@ -47,6 +47,7 @@ interface State {
   lostPieces?: number[];
   check?: boolean;
   mate?: boolean;
+  pieceLost?: boolean;
 }
 
 const ABOUT_URL = "https://github.com/chesslink/chesslink.github.io/#readme";
@@ -96,6 +97,7 @@ export default function Home() {
       lostPieces: [],
       castling: { K: true, Q: true, k: true, q: true },
       enPassant: null,
+      pieceLost: false,
     };
 
     let moves = history.concat(move ? [move] : []);
@@ -180,8 +182,19 @@ export default function Home() {
           >
             {state.lostPieces
               .filter((piece) => (blacksMove ? piece < BLACK : piece >= BLACK))
-              .map((piece, i) => (
-                <RawPiece key={i} className="" piece={piece} />
+              .map((piece, i, arr) => (
+                <RawPiece
+                  key={i}
+                  className={twCascade({
+                    "outline-4 outline-slate-700 outline":
+                      i === arr.length - 1 &&
+                      state.pieceLost &&
+                      move !== null &&
+                      ((blacksMove && piece < BLACK) ||
+                        (!blacksMove && piece >= BLACK)),
+                  })}
+                  piece={piece}
+                />
               ))}
           </AspectBox>
         )}
@@ -485,8 +498,19 @@ export default function Home() {
           >
             {state.lostPieces
               .filter((piece) => (blacksMove ? piece >= BLACK : piece < BLACK))
-              .map((piece, i) => (
-                <RawPiece key={i} className="" piece={piece} />
+              .map((piece, i, arr) => (
+                <RawPiece
+                  key={i}
+                  className={twCascade({
+                    "outline-4 outline-slate-700 outline":
+                      i === arr.length - 1 &&
+                      state.pieceLost &&
+                      !hideOpponentsMove &&
+                      ((blacksMove && piece >= BLACK) ||
+                        (!blacksMove && piece < BLACK)),
+                  })}
+                  piece={piece}
+                />
               ))}
           </AspectBox>
         )}
@@ -586,7 +610,7 @@ function Piece({ className, piece }: { className?: string; piece: number }) {
 
 function RawPiece({ className, piece }: { className: string; piece: number }) {
   return (
-    <AspectBox outerClassName="w-1/16" aspect="100%">
+    <AspectBox outerClassName={twCascade("w-1/16", className)} aspect="100%">
       <Image
         src={SVG_PIECES.get(piece & 15)}
         alt={PIECE_NAMES.get(piece) || ""}
@@ -966,7 +990,7 @@ const SVG_PIECES = new Map([
 ]);
 
 function mutateState(state: State, move: number[] | null): void {
-  let { board, lostPieces, castling, enPassant } = state;
+  let { board, lostPieces, castling, enPassant, pieceLost } = state;
 
   if (move !== null) {
     const [from, to] = move;
@@ -984,6 +1008,7 @@ function mutateState(state: State, move: number[] | null): void {
     }
 
     if (board[to]) {
+      pieceLost = true;
       if (lostPieces !== undefined) {
         lostPieces.push(board[to]);
       }
@@ -994,6 +1019,8 @@ function mutateState(state: State, move: number[] | null): void {
         lostPieces.push(board[from + d]);
       }
       board[from + d] = 0;
+    } else {
+      pieceLost = false;
     }
 
     board[to] = board[from];
@@ -1032,6 +1059,7 @@ function mutateState(state: State, move: number[] | null): void {
 
     state.castling = castling;
     state.enPassant = enPassant;
+    state.pieceLost = pieceLost;
   }
 }
 
