@@ -328,7 +328,7 @@ export default function Home() {
                       <svg
                         viewBox="0 0 400 100"
                         xmlns="http://www.w3.org/2000/svg"
-                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 md:h-32 h-28 pointer-events-none"
+                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full pointer-events-none"
                       >
                         <text
                           className={twCascade(
