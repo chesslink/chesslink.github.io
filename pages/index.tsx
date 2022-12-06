@@ -601,6 +601,7 @@ function Piece({ className, piece }: { className?: string; piece: number }) {
         src={SVG_PIECES.get(piece & 15)}
         alt={PIECE_NAMES.get(piece) || ""}
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-full w-full"
+        decoding="sync"
       />
     </div>
   ) : (
