@@ -412,11 +412,12 @@ export default function Home() {
                             {state.mate ? "Checkmate!" : "Check!"}
                           </h1>
                         )}
-                        <p>
-                          Send the following link to your opponent
-                          {showLink === "copied" &&
-                            " (it's been copied to clipboard)"}
-                        </p>
+                        <p>Send the following link to your opponent.</p>
+                        {showLink === "copied" && (
+                          <p className="italic">
+                            The link has been copied to your clipboard.
+                          </p>
+                        )}
                         <div className="flex flex-row gap-4">
                           <input
                             ref={linkInputRef}
@@ -517,7 +518,7 @@ export default function Home() {
 
         <div
           className={twCascade(
-            "w-full flex flex-row justify-center pt-2 gap-2 items-center"
+            "w-full flex flex-row justify-center pt-2 gap-2 items-end"
           )}
         >
           <div className="relative">
@@ -552,11 +553,21 @@ export default function Home() {
               Submit move
             </button>
           </div>
+          <button
+            style={{ all: "revert" }}
+            onClick={() => {
+              setSubmitted(false);
+              setMove(null);
+            }}
+            disabled={move === null}
+          >
+            Undo
+          </button>
         </div>
       </div>
 
       <div className="flex flex-row w-full justify-between text-xs text-slate-500 max-w-[528px] md:px-0 px-1">
-        <p>(C) 2022 D. Revelj</p>
+        <p>(C) 2022-2023 D. Revelj</p>
         <p>v {publicRuntimeConfig?.version}</p>
         <a className="hover:underline" href={ABOUT_URL}>
           About
