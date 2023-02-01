@@ -395,7 +395,10 @@ export default function Home() {
                         <div className="self-center">
                           <button
                             style={{ all: "revert" }}
-                            onClick={() => void setHideWelcome(true)}
+                            onClick={() => {
+                              gtagEvent("start_game");
+                              setHideWelcome(true);
+                            }}
                           >
                             Start
                           </button>
@@ -538,6 +541,7 @@ export default function Home() {
             <button
               style={{ all: "revert" }}
               onClick={() => {
+                gtagEvent("submit_move");
                 setSubmitted(true);
                 if (navigator) {
                   navigator.clipboard.writeText(newStateLink || "").then(
@@ -1130,4 +1134,17 @@ function cloneState(state: State): State {
     castling: { ...state.castling },
     lostPieces: state.lostPieces ? [...state.lostPieces] : undefined,
   };
+}
+
+declare global {
+  interface Window {
+    gtag: (...args: any[]) => void;
+  }
+}
+
+function gtagEvent(name: string) {
+  if (typeof window !== "undefined" && window.gtag && name) {
+    console.log(name);
+    window.gtag("event", name, { event_category: "general" });
+  }
 }
